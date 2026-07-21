@@ -1,4 +1,4 @@
-# 📚 Tổng Hợp Kiến Thức Git - 5/7 Video
+# 📚 Tổng Hợp Kiến Thức Git - 7/7 Video
 
 ---
 
@@ -222,3 +222,320 @@ git merge origin/main  # Merge khi đã sẵn sàng
 ---
 
 > 📌 **Ghi nhớ:** `git pull` = `git fetch` + `git merge`
+
+---
+
+## Video 6: Git Flow Tại Sun*
+
+### Quy trình tổng quan (Vòng tròn)
+
+```
+Fork repo gốc → Clone về local → Add remote upstream
+                                        │
+                                        ▼
+                    ┌→ Làm việc trên branch (working)
+                    │               │
+                    │               ▼
+                    │       Create commit
+                    │               │
+                    │               ▼
+                    │        Rebase code
+                    │               │
+                    │               ▼
+                    │       Fix conflict
+                    │               │
+                    │               ▼
+                    │        Push code
+                    │               │
+                    │               ▼
+                    │       Create PR
+                    │               │
+                    │               ▼
+                    └──── Merged PR ┘
+```
+
+### Bước 1: Fork & Clone
+
+```bash
+# Fork repo từ remote gốc (upstream) sang remote của mình (origin) trên GitHub
+
+# Clone repo đã fork về local
+git clone <url-repo-đã-fork>
+
+# Thêm remote gốc (upstream) vào local
+git remote add upstream <url-repo-gốc>
+
+# Kiểm tra remote
+git remote -v
+# origin    → repo đã fork (của mình)
+# upstream  → repo gốc (của team/công ty)
+```
+
+### Bước 2: Làm việc trên branch
+
+```bash
+# Tạo branch mới từ branch chính và làm việc
+git checkout -b branch-2
+
+# Tạo các commit khi làm việc
+git add .
+git commit -m "feat: thêm tính năng A"
+git commit -m "fix: sửa lỗi nhỏ"
+git commit -m "refactor: cải thiện code"
+```
+
+### Bước 3: Gộp commits (Interactive Rebase)
+
+Trước khi tạo PR, gộp nhiều commit thành 1 commit gọn gàng:
+
+```bash
+# Gộp 3 commit gần nhất thành 1
+git rebase -i HEAD~3
+```
+
+Trong editor sẽ hiện:
+```
+pick abc1234 feat: thêm tính năng A
+pick def5678 fix: sửa lỗi nhỏ
+pick ghi9012 refactor: cải thiện code
+```
+
+Sửa thành (giữ `pick` đầu tiên, đổi còn lại thành `squash` hoặc `s`):
+```
+pick abc1234 feat: thêm tính năng A
+squash def5678 fix: sửa lỗi nhỏ
+squash ghi9012 refactor: cải thiện code
+```
+
+> Sau đó Git sẽ cho bạn chỉnh lại commit message cho commit đã gộp.
+
+### Bước 4: Rebase code từ upstream
+
+```bash
+# Lấy code mới nhất từ repo gốc
+git fetch upstream
+
+# Rebase branch hiện tại lên upstream/main
+git rebase upstream/main
+```
+
+### Bước 5: Fix conflict (nếu có)
+
+```bash
+# Khi gặp conflict → sửa file bị conflict ở LOCAL
+# ⚠️ KHÔNG resolve conflict trên GitHub vì sẽ tạo thêm commit merge
+
+# Sau khi fix conflict
+git add <file-đã-fix>
+git rebase --continue
+
+# Nếu muốn hủy rebase
+git rebase --abort
+```
+
+### Bước 6: Push & tạo Pull Request
+
+```bash
+# Force push vì đã rebase (lịch sử thay đổi)
+git push origin branch-2 -f
+
+# Sau đó lên GitHub tạo Pull Request từ origin/branch-2 → upstream/main
+```
+
+> ⚠️ **Phải dùng `-f` (force push)** vì sau rebase, lịch sử commit đã bị viết lại.
+
+> ⚠️ **Resolve conflict ở local**, vì resolve trên GitHub sẽ tạo thêm commit merge không mong muốn.
+
+---
+
+## Video 7: Case Studies Thực Tế
+
+### 1️⃣ Gộp commit lại thành 1
+
+Khi có quá nhiều commit nhỏ lẻ, gộp lại cho gọn:
+
+```bash
+# Gộp N commit gần nhất thành 1
+git rebase -i HEAD~N
+
+# Ví dụ: gộp 3 commit gần nhất
+git rebase -i HEAD~3
+
+# Trong editor: giữ "pick" cho commit đầu, đổi còn lại thành "squash"
+```
+
+---
+
+### 2️⃣ Bỏ qua file đã commit
+
+Khi lỡ commit file không mong muốn (vd: `.env`, `node_modules`):
+
+```bash
+# Xóa file khỏi Git tracking nhưng GIỮ file trên máy
+git rm --cached <filename>
+
+# Ví dụ
+git rm --cached .env
+
+# Thêm file vào .gitignore để không bị track lại
+echo ".env" >> .gitignore
+
+# Commit thay đổi
+git add .gitignore
+git commit -m "chore: remove .env from tracking"
+```
+
+---
+
+### 3️⃣ Đổi tên branch
+
+```bash
+# Đổi tên branch hiện tại
+git branch -m <tên-mới>
+
+# Ví dụ
+git branch -m feature-login
+```
+
+---
+
+### 4️⃣ Lưu commit hiện tại sang branch khác
+
+Khi lỡ commit trên branch sai, muốn chuyển commit sang branch khác:
+
+```bash
+# Tạo branch mới tại vị trí hiện tại (giữ lại commit)
+git branch other-branch
+
+# Xóa commit trên branch hiện tại (quay lại trước đó 1 commit)
+git reset --hard HEAD~
+
+# Chuyển sang branch mới (commit vẫn còn ở đó)
+git checkout other-branch
+```
+
+---
+
+### 5️⃣ Commit nhầm & Xóa commit
+
+#### `git reset --soft HEAD~`
+Xóa commit nhưng **giữ thay đổi ở staging area** (đã `git add`):
+```bash
+git reset --soft HEAD~
+# Thay đổi vẫn ở staged → sẵn sàng commit lại
+```
+
+#### `git reset HEAD~` (mixed - mặc định)
+Xóa commit và **đưa thay đổi về working directory** (chưa `git add`):
+```bash
+git reset HEAD~
+# Thay đổi ở working directory → cần git add lại
+```
+
+#### `git reset --hard HEAD~`
+Xóa commit và **xóa luôn thay đổi** (⚠️ mất code):
+```bash
+git reset --hard HEAD~
+# ⚠️ Mọi thay đổi bị xóa hoàn toàn!
+```
+
+#### `git revert <commit>`
+Tạo commit **đảo ngược** — an toàn cho branch đã push:
+```bash
+git revert <commit-id>
+# Tạo commit mới đảo ngược thay đổi, không thay đổi lịch sử
+```
+
+**So sánh các lệnh:**
+
+| Lệnh | Thay đổi | Lịch sử | An toàn |
+|---|---|---|---|
+| `reset --soft` | Giữ ở staged | Xóa commit | ⚠️ Chỉ dùng local |
+| `reset` (mixed) | Giữ ở working dir | Xóa commit | ⚠️ Chỉ dùng local |
+| `reset --hard` | ❌ Xóa hết | Xóa commit | ❌ Nguy hiểm |
+| `revert` | Tạo commit đảo ngược | Giữ nguyên | ✅ An toàn |
+
+---
+
+### 6️⃣ Kết hợp commits từ nhánh khác (Cherry-pick)
+
+Lấy **một commit cụ thể** từ nhánh khác mà không cần merge cả nhánh:
+
+```bash
+# Lấy commit từ nhánh khác theo commit ID
+git cherry-pick <commit-id>
+
+# Ví dụ
+git cherry-pick a1b2c3d
+```
+
+---
+
+### 7️⃣ Đang làm việc & cần chuyển sang nhánh khác (Stash)
+
+Khi đang code dở, cần chuyển sang branch khác xử lý gấp:
+
+```bash
+# Lưu tạm thay đổi hiện tại (bao gồm cả file untracked)
+git stash -u
+
+# Chuyển sang branch khác để xử lý
+git checkout -b other-branch
+git add .
+git commit -m "fix: hotfix urgent"
+
+# Quay lại branch cũ
+git checkout origin-branch
+
+# Lấy lại thay đổi đã stash
+git stash pop
+```
+
+> 💡 `git stash -u` lưu cả file **untracked** (file mới tạo chưa `git add`).
+
+---
+
+### 8️⃣ Xóa nhầm commit quan trọng (Reflog)
+
+Khi lỡ `reset --hard` mất commit quan trọng:
+
+```bash
+# Xem lịch sử mọi hành động (kể cả commit đã "xóa")
+git reflog
+
+# Tìm commit cần khôi phục trong danh sách reflog
+# Khôi phục về commit đó
+git reset --hard <commit-id>
+```
+
+> 💡 `git reflog` là **"lưới an toàn"** — Git lưu lại mọi thay đổi HEAD trong 30 ngày.
+
+---
+
+### 9️⃣ Gộp nhưng muốn hoàn tác (Undo Merge)
+
+Khi đã merge nhưng muốn quay lại trạng thái trước khi merge:
+
+```bash
+# Chuyển về branch gốc (branch đã nhận merge)
+git checkout <original-branch>
+
+# Merge branch vào (nếu chưa merge)
+git merge <merged-branch>
+
+# Hoàn tác merge — quay về trạng thái trước khi merge
+git reset --hard ORIG_HEAD
+```
+
+> 💡 `ORIG_HEAD` là con trỏ Git tự động lưu vị trí HEAD **trước** các thao tác nguy hiểm (merge, rebase, reset).
+
+---
+
+> 📌 **Ghi nhớ tổng hợp:**
+> - Gộp commit → `git rebase -i HEAD~N`
+> - Bỏ track file → `git rm --cached <file>`
+> - Đổi tên branch → `git branch -m <tên-mới>`
+> - Lưu tạm → `git stash -u` / `git stash pop`
+> - Khôi phục commit → `git reflog` + `git reset --hard <commit>`
+> - Lấy commit lẻ → `git cherry-pick <commit-id>`
+> - Hoàn tác merge → `git reset --hard ORIG_HEAD`
