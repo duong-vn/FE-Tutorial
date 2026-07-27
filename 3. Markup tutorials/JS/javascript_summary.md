@@ -1338,3 +1338,1282 @@ alert(clone.me === clone);   // true — circular reference được bảo toàn
 | `structuredClone()` | **Deep copy** | ✅ | ✅ |
 
 > ⚠️ `structuredClone` **không thể** clone functions. Nếu object chứa function properties, sẽ gây lỗi.
+
+---
+
+## 16. Mảng (Array)
+
+### Giới thiệu
+
+- **Object** cho phép lưu trữ các tập hợp dữ liệu **có khóa** (keyed collections). Điều đó ổn.
+- Nhưng rất thường xuyên, chúng ta cần một **tập hợp có thứ tự** (ordered collection), nơi chúng ta có phần tử thứ 1, thứ 2, thứ 3, v.v. Ví dụ: lưu danh sách người dùng, hàng hóa, phần tử HTML, v.v.
+- **Không tiện** sử dụng object ở đây, vì nó **không cung cấp phương thức** để quản lý thứ tự các phần tử. Chúng ta không thể chèn một thuộc tính mới "giữa" các thuộc tính hiện có. Object đơn giản **không được thiết kế** cho mục đích đó.
+- Tồn tại một cấu trúc dữ liệu đặc biệt tên là **Array** (mảng), dùng để lưu trữ **các tập hợp có thứ tự**.
+
+---
+
+### 16.1. Khai báo mảng (Declaration)
+
+Có **hai cú pháp** để tạo mảng rỗng:
+
+```javascript
+// Cú pháp 1: Array constructor
+let arr = new Array();
+
+// Cú pháp 2: Array literal — phổ biến hơn
+let arr = [];
+```
+
+> 💡 Hầu như mọi lúc, cú pháp thứ hai (`[]`) được sử dụng.
+
+Có thể cung cấp **các phần tử ban đầu** trong dấu ngoặc vuông:
+
+```javascript
+let fruits = ["Apple", "Orange", "Plum"];
+```
+
+Các phần tử của mảng được **đánh số từ 0** (zero-indexed):
+
+```javascript
+let fruits = ["Apple", "Orange", "Plum"];
+
+alert(fruits[0]);   // Apple
+alert(fruits[1]);   // Orange
+alert(fruits[2]);   // Plum
+```
+
+**Thao tác cơ bản với mảng:**
+
+```javascript
+let fruits = ["Apple", "Orange", "Plum"];
+
+// Thay thế phần tử
+fruits[2] = "Pear";           // ["Apple", "Orange", "Pear"]
+
+// Thêm phần tử mới
+fruits[3] = "Lemon";          // ["Apple", "Orange", "Pear", "Lemon"]
+
+// Đếm số phần tử
+alert(fruits.length);         // 4
+```
+
+| Thao tác | Cú pháp | Ví dụ |
+|---|---|---|
+| **Đọc** | `arr[index]` | `fruits[0]` → `"Apple"` |
+| **Ghi/Sửa** | `arr[index] = value` | `fruits[2] = "Pear"` |
+| **Độ dài** | `arr.length` | `fruits.length` → `4` |
+
+---
+
+### 16.2. Các phương thức pop/push, shift/unshift
+
+- Mảng trong JavaScript có thể hoạt động **vừa như hàng đợi (queue) vừa như ngăn xếp (stack)**. Chúng cho phép thêm/xóa phần tử ở **cả đầu và cuối** mảng.
+- Trong khoa học máy tính, cấu trúc dữ liệu cho phép điều này gọi là **deque** (double-ended queue).
+
+#### 16.2.1. `pop` — Xóa phần tử cuối
+
+- **Lấy ra** phần tử cuối cùng của mảng và **trả về** phần tử đó.
+- Mảng bị **thay đổi** (phần tử bị xóa).
+
+```javascript
+let fruits = ["Apple", "Orange", "Pear"];
+
+alert(fruits.pop());   // "Pear" — lấy ra phần tử cuối
+
+alert(fruits);          // Apple, Orange — mảng chỉ còn 2 phần tử
+```
+
+> 💡 Cả `fruits.pop()` và `fruits.at(-1)` đều trả về phần tử cuối cùng của mảng, nhưng `fruits.pop()` **cũng sửa đổi mảng** bằng cách xóa phần tử đó.
+
+---
+
+#### 16.2.2. `push` — Thêm phần tử vào cuối
+
+- **Thêm** phần tử vào **cuối** mảng.
+
+```javascript
+let fruits = ["Apple", "Orange"];
+
+fruits.push("Pear");
+
+alert(fruits);   // Apple, Orange, Pear
+```
+
+> 💡 Lời gọi `fruits.push(...)` tương đương với `fruits[fruits.length] = ...`.
+
+---
+
+#### 16.2.3. `shift` — Xóa phần tử đầu
+
+- **Lấy ra** phần tử đầu tiên của mảng và **trả về** phần tử đó.
+- Các phần tử còn lại **dịch lên** để lấp chỗ trống.
+
+```javascript
+let fruits = ["Apple", "Orange", "Pear"];
+
+alert(fruits.shift());   // "Apple" — lấy ra phần tử đầu
+
+alert(fruits);            // Orange, Pear
+```
+
+---
+
+#### 16.2.4. `unshift` — Thêm phần tử vào đầu
+
+- **Thêm** phần tử vào **đầu** mảng.
+
+```javascript
+let fruits = ["Orange", "Pear"];
+
+fruits.unshift("Apple");
+
+alert(fruits);   // Apple, Orange, Pear
+```
+
+**Tổng hợp các phương thức:**
+
+| Phương thức | Vị trí | Hành động | Trả về |
+|---|---|---|---|
+| `push(item)` | **Cuối** mảng | Thêm phần tử | Độ dài mới của mảng |
+| `pop()` | **Cuối** mảng | Xóa phần tử | Phần tử bị xóa |
+| `unshift(item)` | **Đầu** mảng | Thêm phần tử | Độ dài mới của mảng |
+| `shift()` | **Đầu** mảng | Xóa phần tử | Phần tử bị xóa |
+
+> ⚠️ Các phương thức `push/pop` chạy **nhanh**, còn `shift/unshift` chạy **chậm** vì phải dịch chuyển tất cả phần tử.
+
+---
+
+### 16.3. Vòng lặp duyệt mảng (Loops)
+
+#### Vòng lặp `for` truyền thống
+
+Một trong những cách **lâu đời nhất** để duyệt mảng là vòng lặp `for` theo chỉ mục:
+
+```javascript
+let fruits = ["Apple", "Orange", "Plum"];
+
+for (let i = 0; i < fruits.length; i++) {
+  alert(fruits[i]);   // Apple, Orange, Plum
+}
+```
+
+#### Vòng lặp `for..of`
+
+Với mảng, có một dạng vòng lặp khác — `for..of`:
+
+```javascript
+let fruits = ["Apple", "Orange", "Plum"];
+
+// duyệt qua các phần tử của mảng
+for (let fruit of fruits) {
+  alert(fruit);   // Apple, Orange, Plum
+}
+```
+
+| So sánh | `for (let i = 0; ...)` | `for..of` |
+|---|---|---|
+| **Truy cập** | Qua chỉ mục `arr[i]` | Trực tiếp giá trị phần tử |
+| **Biến vòng lặp** | Chỉ mục `i` (số) | Giá trị phần tử |
+| **Khi nào dùng** | Cần truy cập chỉ mục | Chỉ cần giá trị |
+
+> ⚠️ **Không nên dùng `for..in`** để duyệt mảng. Vòng lặp `for..in` duyệt **tất cả thuộc tính** (bao gồm cả thuộc tính không phải số), không chỉ các phần tử mảng. Hãy dùng `for..of` hoặc `for` truyền thống.
+
+---
+
+## 17. Các phương thức làm việc với Mảng (Array Methods)
+
+### 17.1. Thêm / Xóa phần tử (Add/remove items)
+
+#### 17.1.1. `splice`
+
+- Phương thức `splice()` thay đổi nội dung của mảng bằng cách **xóa**, **thay thế** các phần tử hiện có và/hoặc **thêm phần tử mới** trực tiếp trên mảng đó (in place).
+- **Cú pháp:**
+
+```javascript
+arr.splice(start[, deleteCount, elem1, ..., elemN])
+```
+
+- Nó chỉnh sửa mảng `arr` bắt đầu từ chỉ mục `start`: xóa `deleteCount` phần tử và sau đó chèn `elem1, ..., elemN` vào vị trí đó.
+- Trả về **mảng chứa các phần tử bị xóa**.
+
+**Ví dụ:**
+
+```javascript
+let arr = ["I", "study", "JavaScript"];
+
+// từ chỉ mục 2
+// xóa 0 phần tử
+// sau đó chèn "complex" và "language"
+arr.splice(2, 0, "complex", "language");
+
+alert( arr ); // "I", "study", "complex", "language", "JavaScript"
+```
+
+> 💡 `splice` cho phép sử dụng chỉ mục âm (`start < 0`). Khi đó vị trí sẽ được tính ngược từ cuối mảng lên.
+
+---
+
+#### 17.1.2. `slice`
+
+- Phương thức `slice()` trả về một **bản sao nông** (shallow copy) của một phần mảng thành một mảng mới, chọn từ chỉ mục `start` đến `end` (`end` **không được bao gồm**).
+- Cả `start` và `end` đều có thể là số âm — khi đó vị trí được tính từ cuối mảng.
+- Mảng ban đầu **không bị thay đổi**.
+
+- **Cú pháp:**
+
+```javascript
+arr.slice([start], [end])
+```
+
+**Ví dụ:**
+
+```javascript
+let arr = ["t", "e", "s", "t"];
+
+alert( arr.slice(1, 3) ); // e,s (sao chép từ index 1 đến 3, không bao gồm index 3)
+
+alert( arr.slice(-2) );    // s,t (sao chép từ index -2 đến cuối mảng)
+```
+
+---
+
+#### 17.1.3. `concat`
+
+- Phương thức `concat()` được sử dụng để **hợp nhất (gộp) hai hoặc nhiều mảng**.
+- Phương thức này **không làm thay đổi** các mảng hiện có mà **trả về một mảng mới**.
+- **Cú pháp:**
+
+```javascript
+arr.concat(arg1, arg2...)
+```
+
+- Nó chấp nhận bất kỳ số lượng đối số nào — có thể là các mảng hoặc giá trị đơn lẻ.
+
+**Ví dụ:**
+
+```javascript
+let arr = [1, 2];
+
+// tạo mảng mới từ: arr và [3, 4]
+alert( arr.concat([3, 4]) ); // 1,2,3,4
+
+// tạo mảng mới từ: arr, [3, 4] và [5, 6]
+alert( arr.concat([3, 4], [5, 6]) ); // 1,2,3,4,5,6
+
+// tạo mảng mới từ: arr, [3, 4], sau đó thêm các giá trị 5 và 6
+alert( arr.concat([3, 4], 5, 6) ); // 1,2,3,4,5,6
+```
+
+| Phương thức | Sửa mảng gốc? | Trả về | Mô tả |
+|---|---|---|---|
+| `splice(start, deleteCount, ...elems)` | ✅ Có | Mảng các phần tử bị xóa | Xóa/thay thế/thêm phần tử trực tiếp |
+| `slice(start, end)` | ❌ Không | Mảng mới chứa phần tử được chọn | Sao chép một phần của mảng |
+| `concat(arg1, arg2, ...)` | ❌ Không | Mảng mới được gộp lại | Hợp nhất các mảng hoặc giá trị |
+
+---
+
+### 17.2. Duyệt qua mảng: `forEach` (Iterate)
+
+- Phương thức `arr.forEach` cho phép **chạy một hàm cho mọi phần tử** của mảng.
+- **Cú pháp:**
+
+```javascript
+arr.forEach(function(item, index, array) {
+  // ... thực hiện thao tác với item
+});
+```
+
+**Ví dụ:**
+
+```javascript
+["Bilbo", "Gandalf", "Nazgul"].forEach((item, index, array) => {
+  alert(`${item} is at index ${index} in ${array}`);
+});
+```
+
+| Tham số callback | Ý nghĩa |
+|---|---|
+| `item` | Phần tử hiện tại đang duyệt |
+| `index` | Chỉ mục của phần tử hiện tại |
+| `array` | Chính mảng đang được duyệt |
+
+---
+
+### 17.3. Tìm kiếm trong mảng (Searching in array)
+
+#### 17.3.1. `indexOf`, `lastIndexOf` và `includes`
+
+- Các phương thức `arr.indexOf` và `arr.includes` có cú pháp tương tự và hoạt động tương tự như trên chuỗi (String), nhưng thao tác với các phần tử mảng:
+  - `arr.indexOf(item, from)` — tìm kiếm `item` bắt đầu từ chỉ mục `from`, trả về **chỉ mục** nơi tìm thấy, nếu không tìm thấy trả về `-1`.
+  - `arr.includes(item, from)` — tìm kiếm `item` bắt đầu từ chỉ mục `from`, trả về `true` nếu tìm thấy, ngược lại trả về `false`.
+  - `arr.lastIndexOf(item, from)` — tương tự như `indexOf`, nhưng tìm kiếm **từ phải sang trái** (từ cuối về đầu).
+
+**Ví dụ:**
+
+```javascript
+let arr = [1, 0, false];
+
+alert( arr.indexOf(0) );     // 1
+alert( arr.indexOf(false) ); // 2
+alert( arr.indexOf(null) );  // -1
+
+alert( arr.includes(1) );    // true
+```
+
+| Phương thức | Kết quả khi tìm thấy | Kết quả khi KHÔNG tìm thấy | Hướng tìm kiếm |
+|---|---|---|---|
+| `indexOf(item, from)` | Chỉ mục của phần tử | `-1` | Trái → Phải |
+| `lastIndexOf(item, from)` | Chỉ mục của phần tử | `-1` | Phải → Trái |
+| `includes(item, from)` | `true` | `false` | Trái → Phải |
+
+> ⚠️ Các phương thức này sử dụng **so sánh nghiêm ngặt** (`===`). Vì vậy, nếu tìm `false`, nó tìm đúng giá trị boolean `false`, chứ không phải số `0`. Ngoài ra, `includes` xử lý đúng `NaN` (khác với `indexOf`).
+
+---
+
+#### 17.3.2. `find` và `findIndex` / `findLastIndex`
+
+##### `find`
+
+- Phương thức `find()` trả về **phần tử đầu tiên** trong mảng thỏa mãn hàm kiểm tra được cung cấp. Nếu không có phần tử nào thỏa mãn, nó trả về `undefined`.
+- **Cú pháp:**
+
+```javascript
+let result = arr.find(function(item, index, array) {
+  // nếu trả về true -> result là item và vòng lặp dừng lại
+  // nếu không tìm thấy -> trả về undefined
+});
+```
+
+**Ví dụ:**
+
+```javascript
+let users = [
+  {id: 1, name: "John"},
+  {id: 2, name: "Pete"},
+  {id: 3, name: "Mary"}
+];
+
+let user = users.find(item => item.id == 1);
+
+alert(user.name); // John
+```
+
+##### `findIndex` và `findLastIndex`
+
+- Phương thức `arr.findIndex` có cùng cú pháp với `find`, nhưng trả về **chỉ mục** (index) nơi tìm thấy phần tử thay vì chính phần tử đó. Trả về `-1` nếu không tìm thấy.
+- Phương thức `arr.findLastIndex` tương tự như `findIndex`, nhưng tìm kiếm **từ phải sang trái** (từ cuối mảng về đầu).
+
+**Ví dụ:**
+
+```javascript
+let users = [
+  {id: 1, name: "John"},
+  {id: 2, name: "Pete"},
+  {id: 3, name: "Mary"},
+  {id: 4, name: "Pete"}
+];
+
+// Tìm chỉ mục của Pete đầu tiên
+alert(users.findIndex(user => user.name == 'Pete')); // 1
+
+// Tìm chỉ mục của Pete cuối cùng
+alert(users.findLastIndex(user => user.name == 'Pete')); // 3
+```
+
+---
+
+#### 17.3.3. `filter`
+
+- Phương thức `filter()` tạo một **bản sao nông** (shallow copy) gồm tất cả các phần tử của mảng vượt qua điều kiện kiểm tra của hàm được cung cấp.
+- Trong khi `find` chỉ tìm **phần tử đầu tiên** thỏa mãn, thì `filter` tìm **tất cả phần tử** thỏa mãn điều kiện và trả về một mảng chứa các phần tử đó.
+- **Cú pháp:**
+
+```javascript
+let results = arr.filter(function(item, index, array) {
+  // nếu trả về true -> item được thêm vào results và tiếp tục lặp
+});
+```
+
+**Ví dụ:**
+
+```javascript
+let users = [
+  {id: 1, name: "John"},
+  {id: 2, name: "Pete"},
+  {id: 3, name: "Mary"}
+];
+
+// Trả về mảng chứa 2 phần tử đầu tiên
+let someUsers = users.filter(item => item.id < 3);
+
+alert(someUsers.length); // 2
+```
+
+| Phương thức | Trả về | Số lượng kết quả |
+|---|---|---|
+| `find` | Giá trị phần tử (hoặc `undefined`) | 1 (phần tử đầu tiên) |
+| `findIndex` | Chỉ mục phần tử (hoặc `-1`) | 1 (chỉ mục đầu tiên) |
+| `findLastIndex` | Chỉ mục phần tử (hoặc `-1`) | 1 (chỉ mục cuối cùng) |
+| `filter` | Mảng chứa các phần tử | Tất cả phần tử thỏa mãn |
+
+---
+
+### 17.4. Biến đổi mảng (Transform an array)
+
+#### 17.4.1. `map`
+
+- Phương thức `arr.map` gọi hàm kiểm tra cho mỗi phần tử của mảng và **trả về một mảng chứa các kết quả**.
+- **Cú pháp:**
+
+```javascript
+let result = arr.map(function(item, index, array) {
+  // trả về giá trị mới thay cho item
+});
+```
+
+**Ví dụ:**
+
+```javascript
+let lengths = ["Bilbo", "Gandalf", "Nazgul"].map(item => item.length);
+alert(lengths); // 5,7,6
+```
+
+---
+
+#### 17.4.2. `sort(fn)`
+
+- Phương thức `arr.sort()` sắp xếp mảng **trực tiếp** (in place), làm thay đổi thứ tự phần tử của mảng gốc.
+- Nó cũng trả về mảng đã được sắp xếp, nhưng giá trị trả về thường được bỏ qua vì chính `arr` đã bị sửa đổi.
+- Mặc định, các phần tử được **sắp xếp dưới dạng chuỗi** (strings).
+
+**Ví dụ sắp xếp mặc định:**
+
+```javascript
+let arr = [ 1, 2, 15 ];
+
+// phương thức sort() biến đổi các phần tử thành chuỗi
+arr.sort();
+
+alert( arr );  // 1, 15, 2  (vì "15" < "2" khi so sánh chuỗi!)
+```
+
+**Sử dụng hàm so sánh custom `fn`:**
+
+- Phương thức `arr.sort(fn)` triển khai một thuật toán sắp xếp tổng quát. Nó sẽ duyệt qua mảng, so sánh các phần tử bằng hàm `fn` được cung cấp và sắp xếp lại chúng.
+- Hàm so sánh `fn(a, b)` chỉ cần trả về:
+  - Giá trị `< 0`: nếu `a` đứng trước `b`
+  - Giá trị `> 0`: nếu `a` đứng sau `b`
+  - Giá trị `= 0`: nếu `a` và `b` bằng nhau
+
+**Ví dụ:**
+
+```javascript
+function compareNumeric(a, b) {
+  if (a > b) return 1;
+  if (a == b) return 0;
+  if (a < b) return -1;
+}
+
+let arr = [ 1, 2, 15 ];
+
+arr.sort(compareNumeric);
+
+alert(arr);  // 1, 2, 15
+
+// Viết gọn với arrow function:
+arr.sort((a, b) => a - b);
+```
+
+---
+
+#### 17.4.3. `reduce`
+
+- Phương thức `arr.reduce` được sử dụng để **tính toán ra một giá trị duy nhất** dựa trên mảng.
+- Hàm được áp dụng lần lượt cho tất cả các phần tử mảng và "chuyển tiếp" (carries on) kết quả sang lần gọi tiếp theo.
+- Đối số đầu tiên là **`accumulator`** (bộ tích lũy) lưu trữ kết quả kết hợp của tất cả các lần thực thi trước đó. Và cuối cùng nó trở thành kết quả của `reduce`.
+
+- **Cú pháp:**
+
+```javascript
+let value = arr.reduce(function(accumulator, item, index, array) {
+  // ...
+}, [initial]);
+```
+
+- **Các đối số:**
+  - `accumulator` — là kết quả của lần gọi hàm trước đó, bằng `initial` ở lần gọi đầu tiên (nếu `initial` được cung cấp).
+  - `item` — phần tử mảng hiện tại.
+  - `index` — chỉ mục của phần tử.
+  - `array` — chính mảng đó.
+
+**Ví dụ tính tổng mảng:**
+
+```javascript
+let arr = [1, 2, 3, 4, 5];
+
+let result = arr.reduce((sum, current) => sum + current, 0);
+
+alert(result); // 15
+```
+
+---
+
+### 17.5. Kiểm tra mảng: `Array.isArray`
+
+- Mảng **không tạo thành một kiểu dữ liệu riêng biệt** trong JavaScript, chúng dựa trên kiểu `Object`.
+- Do đó toán tử `typeof` không giúp phân biệt một đối tượng thông thường với một mảng:
+
+```javascript
+alert(typeof {}); // object
+alert(typeof []); // object (giống hệt!)
+```
+
+- Nhưng mảng được sử dụng rất thường xuyên nên có một phương thức đặc biệt dành riêng cho việc này: **`Array.isArray(value)`**.
+- Trả về `true` nếu `value` là một mảng, ngược lại trả về `false`.
+
+**Ví dụ:**
+
+```javascript
+alert(Array.isArray({})); // false
+alert(Array.isArray([])); // true
+```
+
+| Kiểm tra | Kết quả cho `{}` | Kết quả cho `[]` |
+|---|---|---|
+| `typeof` | `"object"` | `"object"` |
+| `Array.isArray()` | `false` | `true` |
+
+---
+
+## 18. Xử lý lỗi (Error Handling)
+
+### Giới thiệu
+
+- Dù chúng ta lập trình giỏi đến đâu, đôi khi script của chúng ta vẫn gặp lỗi. Lỗi có thể xảy ra do sai sót khi viết code, dữ liệu đầu vào không mong muốn từ người dùng, phản hồi lỗi từ server, và hàng ngàn lý do khác.
+- Thông thường, script sẽ **"chết" (dừng ngay lập tức)** khi xảy ra lỗi và in ra thông báo lỗi ở console.
+- Tuy nhiên, cú pháp **`try...catch`** cho phép chúng ta "bắt" (catch) các lỗi để chương trình thay vì bị dừng đột ngột có thể thực hiện các hành động xử lý hợp lý hơn.
+
+---
+
+### 18.1. Cú pháp `try...catch`
+
+Cấu trúc `try...catch` bao gồm hai khối chính: `try` và `catch`.
+
+**Cú pháp cơ bản:**
+
+```javascript
+try {
+  // code...
+} catch (err) {
+  // xử lý lỗi
+}
+```
+
+**Cách thức hoạt động:**
+1. Đầu tiên, mã nguồn trong khối `try {...}` được thực thi.
+2. Nếu **không có lỗi**, khối `catch (err)` bị bỏ qua: luồng thực thi chạy đến cuối khối `try` rồi tiếp tục các phần code sau đó.
+3. Nếu **xảy ra lỗi**, luồng thực thi trong `try` bị tạm dừng và chuyển ngay sang khối `catch (err)`. Biến `err` chứa đối tượng lỗi với thông tin chi tiết về sự cố.
+
+```javascript
+try {
+  alert('Bắt đầu khối try');  // (1)
+  lalala;                      // (2) lỗi! biến chưa định nghĩa
+  alert('Kết thúc khối try');  // (3) không bao giờ chạy tới đây
+} catch (err) {
+  alert('Đã xảy ra lỗi!');     // (4) được thực thi
+}
+```
+
+> ⚠️ **Lưu ý quan trọng:**
+> - `try...catch` **chỉ hoạt động với mã chạy được** (runtime errors / runnable code). Code phải đúng cú pháp JavaScript (valid JS). Nếu mã bị sai cú pháp (Syntax Error), `try...catch` sẽ không thể bắt được lỗi vì chương trình không thể đọc/biên dịch code.
+> - `try...catch` hoạt động **đồng bộ** (synchronously). Để bắt một ngoại lệ bên trong một hàm lập lịch bất đồng bộ (như `setTimeout`), `try...catch` phải được đặt **bên trong hàm callback** đó, chứ không phải bọc bên ngoài `setTimeout`.
+
+**Ví dụ xử lý với `setTimeout`:**
+
+```javascript
+// ❌ SAI: try...catch bọc ngoài setTimeout sẽ KHÔNG bắt được lỗi bất đồng bộ
+try {
+  setTimeout(function() {
+    noSuchVariable; // script sẽ chết ở đây
+  }, 1000);
+} catch (err) {
+  alert( "không bao giờ chạy tới đây" );
+}
+
+// ✅ ĐÚNG: try...catch đặt BÊN TRONG hàm callback
+setTimeout(function() {
+  try {
+    noSuchVariable; // try...catch bắt lỗi thành công!
+  } catch {
+    alert( "Lỗi đã được bắt tại đây!" );
+  }
+}, 1000);
+```
+
+---
+
+### 18.2. Đối tượng Lỗi (Error object)
+
+Khi xảy ra lỗi, JavaScript tự động tạo ra một đối tượng chứa thông tin chi tiết về lỗi đó và truyền nó làm đối số cho khối `catch`.
+
+Đối với tất cả các lỗi tích hợp sẵn (built-in errors), đối tượng error có **3 thuộc tính chính**:
+
+| Thuộc tính | Ý nghĩa | Ví dụ |
+|---|---|---|
+| `name` | Tên của lỗi | `"ReferenceError"`, `"TypeError"`, `"SyntaxError"` |
+| `message` | Thông điệp văn bản mô tả chi tiết lỗi | `"noSuchVariable is not defined"` |
+| `stack` | Call stack tại thời điểm lỗi | Chuỗi thông tin chi tiết về thứ tự các hàm lồng nhau dẫn đến lỗi (dùng cho debug) |
+
+**Ví dụ đọc thuộc tính Error object:**
+
+```javascript
+try {
+  lalala; // lỗi: biến chưa khai báo
+} catch (err) {
+  alert(err.name);    // ReferenceError
+  alert(err.message); // lalala is not defined
+  alert(err.stack);   // ReferenceError: lalala is not defined at (...stack trace...)
+
+  // Cũng có thể in toàn bộ error object (sẽ hiển thị name: message)
+  alert(err);         // ReferenceError: lalala is not defined
+}
+```
+
+---
+
+### 18.3. `try...catch...finally`
+
+Cấu trúc `try...catch` có thể mở rộng thêm khối **`finally`**.
+
+Nếu tồn tại, khối `finally` sẽ **luôn luôn được thực thi trong mọi trường hợp**:
+- Sau khối `try`, nếu **không có lỗi**.
+- Sau khối `catch`, nếu **có lỗi xảy ra**.
+
+**Cú pháp:**
+
+```javascript
+try {
+  // ... cố gắng thực thi code ...
+} catch (err) {
+  // ... xử lý lỗi nếu có ...
+} finally {
+  // ... luôn luôn thực thi ...
+}
+```
+
+**Ví dụ:**
+
+```javascript
+try {
+  alert( 'thực thi try' );
+  if (confirm('Tạo lỗi?')) BAD_CODE();
+} catch (err) {
+  alert( 'thực thi catch' );
+} finally {
+  alert( 'thực thi finally' );
+}
+```
+
+> 💡 **Khối `finally` và `return`:**
+> Mệnh đề `finally` hoạt động cho **bất kỳ cách thoát nào** khỏi `try...catch`, kể cả khi có câu lệnh `return` rõ ràng bên trong `try` hoặc `catch`. Khối `finally` vẫn sẽ chạy trước khi hàm thực sự trả về kết quả.
+
+**Cấu trúc `try...finally` (không có `catch`):**
+
+Cấu trúc này hữu ích khi chúng ta không muốn xử lý lỗi tại hàm hiện tại (để lỗi lọt ra ngoài cho hàm gọi nó xử lý), nhưng vẫn muốn **đảm bảo hoàn tất/dọn dẹp** (finalize) các tiến trình đã bắt đầu (như đóng kết nối, dừng timer, dọn tài nguyên, v.v.).
+
+```javascript
+function doWork() {
+  try {
+    // làm gì đó...
+  } finally {
+    // đảm bảo hoàn tất dọn dẹp dù có lỗi hay không
+    cleanUp();
+  }
+}
+```
+
+| Cấu trúc | Khi nào dùng |
+|---|---|
+| `try...catch` | Xử lý lỗi và ngăn chương trình bị dừng đột ngột |
+| `try...catch...finally` | Xử lý lỗi và luôn thực hiện dọn dẹp/hoàn tất sau cùng |
+| `try...finally` | Không bắt lỗi tại đây (để lọt ra ngoài) nhưng đảm bảo luôn thực hiện dọn dẹp |
+
+---
+
+## 19. Promise (Lời hứa bất đồng bộ)
+
+### Giới thiệu (Introduction)
+
+- Đối tượng **`Promise`** đại diện cho sự **hoàn thành (fulfillment)** hoặc **thất bại (rejection)** trong tương lai của một tác vụ bất đồng bộ (asynchronous operation) và giá trị trả về của nó.
+- **Cú pháp khởi tạo (Constructor syntax):**
+
+```javascript
+let promise = new Promise(function(resolve, reject) {
+  // executor (hàm thực thi tác vụ)
+});
+```
+
+- Một `Promise` luôn nằm ở một trong **ba trạng thái (states)**:
+
+| Trạng thái | Mô tả | Chi tiết |
+|---|---|---|
+| **`pending`** | Trạng thái ban đầu | Chưa hoàn thành cũng chưa bị từ chối |
+| **`fulfilled`** | Thao tác thành công | Gọi `resolve(value)` thành công |
+| **`rejected`** | Thao tác thất bại | Gọi `reject(error)` do có lỗi |
+
+---
+
+### 19.1. Các hàm tiêu thụ: `then`, `catch` (Consumers)
+
+Đối tượng `Promise` đóng vai trò là cầu nối giữa hàm thực thi (executor) và các hàm tiêu thụ (consuming functions) sẽ nhận kết quả hoặc lỗi. Các hàm tiêu thụ được đăng ký thông qua phương thức `.then` và `.catch`.
+
+#### 19.1.1. Phương thức `.then`
+
+- **Cú pháp:**
+
+```javascript
+promise.then(
+  function(result) { /* xử lý kết quả thành công */ },
+  function(error)  { /* xử lý lỗi */ }
+);
+```
+
+- **Tham số:**
+  - Đối số thứ nhất: Hàm chạy khi Promise được `resolved` và nhận giá trị `result`.
+  - Đối số thứ hai: Hàm chạy khi Promise bị `rejected` và nhận đối tượng `error`.
+
+**Ví dụ:**
+
+```javascript
+let promise = new Promise(function(resolve, reject) {
+  setTimeout(() => resolve("done!"), 1000);
+});
+
+// resolve thực thi hàm đầu tiên trong .then
+promise.then(
+  result => alert(result), // hiển thị "done!" sau 1 giây
+  error => alert(error)   // không chạy
+);
+```
+
+---
+
+#### 19.1.2. Phương thức `.catch`
+
+- Nếu chỉ quan tâm đến **lỗi (errors)**, ta có thể truyền `null` làm đối số đầu tiên: `.then(null, errorHandlingFunction)`. Hoặc ngắn gọn hơn, sử dụng phương thức **`.catch`**.
+
+```javascript
+let promise = new Promise((resolve, reject) => {
+  setTimeout(() => reject(new Error("Whoops!")), 1000);
+});
+
+// .catch(f) tương đương với promise.then(null, f)
+promise.catch(alert); // hiển thị "Error: Whoops!" sau 1 giây
+```
+
+---
+
+### 19.2. Chuỗi Promise (Promise Chaining)
+
+- Khi gọi `.then`, nó trả về một **Promise mới**. Điều này cho phép chúng ta nối tiếp các câu lệnh `.then` tạo thành một **chuỗi xử lý bất đồng bộ (chaining)**.
+
+```javascript
+new Promise(function(resolve, reject) {
+  setTimeout(() => resolve(1), 1000);
+}).then(function(result) {
+  alert(result); // 1
+  return result * 2;
+}).then(function(result) {
+  alert(result); // 2
+  return result * 2;
+}).then(function(result) {
+  alert(result); // 4
+});
+```
+
+**Trả về Promise trong `.then` (Returning promises):**
+
+- Một hàm handler trong `.then(handler)` có thể tạo và **trả về một Promise mới**. Khi đó, các handler tiếp theo trong chuỗi sẽ **đợi cho đến khi Promise đó settled** (hoàn thành) rồi mới nhận kết quả.
+
+```javascript
+new Promise(function(resolve, reject) {
+  setTimeout(() => resolve(1), 1000);
+}).then(function(result) {
+  alert(result); // 1
+  return new Promise((resolve, reject) => {
+    setTimeout(() => resolve(result * 2), 1000);
+  });
+}).then(function(result) {
+  alert(result); // 2
+});
+```
+
+---
+
+### 19.3. Xử lý lỗi trong Promise (Error handling with promises)
+
+#### 19.3.1. `try...catch` ẩn (Implicit try...catch)
+
+- Mã nguồn bên trong executor của Promise và các handler (`.then`, `.catch`) có một khối `try...catch` "ẩn" bao bọc xung quanh.
+- Nếu có một ngoại lệ xảy ra (exception), nó tự động được bắt và xử lý như một **Rejection** (tương đương gọi `reject(error)`).
+
+```javascript
+new Promise((resolve, reject) => {
+  throw new Error("Whoops!");
+}).catch(alert); // Error: Whoops!
+```
+
+---
+
+#### 19.3.2. Quăng lại lỗi (Rethrowing)
+
+- Nếu ta `throw` (ném lỗi) bên trong khối `.catch`, quyền kiểm soát sẽ nhảy đến **hàm xử lý lỗi `.catch` gần nhất tiếp theo**.
+- Nếu ta xử lý lỗi và kết thúc bình thường (không `throw`), luồng thực thi sẽ tiếp tục chuyển sang **`.then` thành công gần nhất tiếp theo**.
+
+```javascript
+new Promise((resolve, reject) => {
+  throw new Error("Whoops!");
+}).catch(function(error) {
+  if (error instanceof URIError) {
+    // xử lý lỗi URIError
+  } else {
+    alert("Không thể xử lý lỗi này");
+    throw error; // ném lỗi tiếp sang .catch kế tiếp
+  }
+}).then(function() {
+  // không chạy tới đây
+}).catch(error => {
+  alert(`Đã bắt được lỗi chưa xác định: ${error}`);
+});
+```
+
+---
+
+#### 19.3.3. Rejection chưa được xử lý (Unhandled rejections)
+
+- Khi một lỗi xảy ra và không được bắt bởi bất kỳ `.catch` nào, script sẽ ghi nhận lỗi và in thông báo ở console (tương tự lỗi chưa bắt trong code đồng bộ).
+- Trình duyệt cung cấp sự kiện **`unhandledrejection`** để lắng nghe các lỗi Promise chưa được xử lý trên toàn hệ thống:
+
+```javascript
+window.addEventListener('unhandledrejection', function(event) {
+  // event object có hai thuộc tính đặc biệt:
+  alert(event.promise); // [object Promise] — promise tạo ra lỗi
+  alert(event.reason);  // Error: Whoops! — đối tượng lỗi chưa được xử lý
+});
+
+new Promise(function() {
+  throw new Error("Whoops!");
+}); // Không có .catch để xử lý lỗi
+```
+
+---
+
+### 19.4. Promise API
+
+Lớp `Promise` cung cấp **6 phương thức tĩnh (static methods)** chính:
+
+#### 19.4.1. `Promise.all`
+
+- Nhận vào một iterable (thường là một mảng các promises) và trả về một promise mới.
+- Promise mới sẽ **`resolve` khi TẤT CẢ các promise trong mảng đều được resolve**, và mảng chứa kết quả của từng promise sẽ là kết quả của `Promise.all`.
+- Nếu **bất kỳ** promise nào bị `rejected`, `Promise.all` sẽ **lập tức reject** với lỗi của promise đó (bỏ qua kết quả của các promise còn lại).
+
+```javascript
+Promise.all([
+  new Promise(resolve => setTimeout(() => resolve(1), 3000)), // 1
+  new Promise(resolve => setTimeout(() => resolve(2), 2000)), // 2
+  new Promise(resolve => setTimeout(() => resolve(3), 1000))  // 3
+]).then(alert); // [1, 2, 3] khi tất cả các promise đã xong
+```
+
+---
+
+#### 19.4.2. `Promise.allSettled`
+
+- Chờ cho **TẤT CẢ** các promise hoàn thành (**settled**), bất kể chúng thành công (`fulfilled`) hay thất bại (`rejected`).
+- Mảng kết quả chứa các đối tượng có dạng:
+  - `{status: "fulfilled", value: result}` — đối với response thành công.
+  - `{status: "rejected", reason: error}` — đối với lỗi.
+
+```javascript
+let urls = [
+  'https://api.github.com/users/iliakan',
+  'https://api.github.com/users/remy',
+  'https://no-such-url'
+];
+
+Promise.allSettled(urls.map(url => fetch(url)))
+  .then(results => {
+    results.forEach((result, num) => {
+      if (result.status == "fulfilled") {
+        alert(`${urls[num]}: ${result.value.status}`);
+      }
+      if (result.status == "rejected") {
+        alert(`${urls[num]}: ${result.reason}`);
+      }
+    });
+  });
+```
+
+---
+
+#### 19.4.3. `Promise.race`
+
+- Tương tự `Promise.all`, nhưng chỉ **chờ promise ĐẦU TIÊN settled** (thành công hoặc thất bại) và lấy ngay kết quả/lỗi đó.
+
+```javascript
+Promise.race([
+  new Promise((resolve, reject) => setTimeout(() => resolve(1), 1000)),
+  new Promise((resolve, reject) => setTimeout(() => reject(new Error("Lỗi!")), 2000)),
+  new Promise((resolve, reject) => setTimeout(() => resolve(3), 3000))
+]).then(alert); // 1 (vì promise đầu tiên chạy nhanh nhất)
+```
+
+---
+
+#### 19.4.4. `Promise.any`
+
+- Chờ promise **ĐẦU TIÊN thành công (`fulfilled`)** và lấy kết quả của nó.
+- Nếu **TẤT CẢ các promise đều bị rejected**, promise trả về sẽ bị reject với **`AggregateError`** — một đối tượng lỗi đặc biệt lưu trữ tất cả các lỗi trong thuộc tính `errors`.
+
+```javascript
+Promise.any([
+  new Promise((resolve, reject) => setTimeout(() => reject(new Error("Lỗi 1")), 1000)),
+  new Promise((resolve, reject) => setTimeout(() => resolve(2), 2000)),
+  new Promise((resolve, reject) => setTimeout(() => resolve(3), 3000))
+]).then(alert); // 2 (kết quả của promise thành công đầu tiên)
+```
+
+---
+
+#### 19.4.5. `Promise.resolve` và `Promise.reject`
+
+- **`Promise.resolve(value)`**: Tạo một promise đã `fulfilled` với giá trị `value`. Thường dùng để đảm bảo tương thích khi một hàm cần trả về một promise.
+- **`Promise.reject(error)`**: Tạo một promise đã `rejected` với đối tượng lỗi `error`.
+
+```javascript
+let promise = Promise.resolve(123);
+promise.then(alert); // 123
+```
+
+---
+
+### Bảng tổng hợp Promise API
+
+| Phương thức | Chờ khi nào? | Trả về | Xử lý Rejection |
+|---|---|---|---|
+| `Promise.all` | Tất cả promises hoàn thành | Mảng chứa các kết quả | Reject **ngay lập tức** nếu có 1 lỗi |
+| `Promise.allSettled` | Tất cả promises hoàn thành | Mảng chứa `{status, value/reason}` | Không reject, trả về trạng thái chi tiết của từng promise |
+| `Promise.race` | Promise **đầu tiên** hoàn thành | Kết quả/Lỗi của promise đầu tiên | Reject nếu promise nhanh nhất bị lỗi |
+| `Promise.any` | Promise **thành công đầu tiên** | Kết quả của promise thành công nhanh nhất | Reject với `AggregateError` nếu **tất cả** bị lỗi |
+| `Promise.resolve(v)` | Tức thì | Promise đã fulfilled với `v` | — |
+| `Promise.reject(e)` | Tức thì | Promise đã rejected với `e` | — |
+
+---
+
+## 20. Async/await
+
+### Giới thiệu (Introduction)
+
+- JavaScript cung cấp một cú pháp đặc biệt để làm việc với Promise một cách thuận tiện và dễ đọc hơn, được gọi là **`async/await`**.
+- Cú pháp này vô cùng dễ hiểu, dễ sử dụng và giúp mã bất đồng bộ trông giống như mã đồng bộ truyền thống.
+
+---
+
+### 20.1. Hàm Async (Async functions)
+
+- Từ khóa `async` được đặt trước một khai báo hàm.
+
+**Cú pháp:**
+
+```javascript
+async function f() {
+  return 1;
+}
+```
+
+- Từ **`async`** đặt trước hàm mang một ý nghĩa đơn giản: **hàm này luôn luôn trả về một Promise**.
+- Các giá trị trả về khác (không phải Promise) sẽ tự động được JavaScript bọc trong một **resolved Promise**.
+
+**Ví dụ:**
+
+```javascript
+async function f() {
+  return 1;
+}
+
+f().then(alert); // hiển thị 1
+```
+
+> 💡 Kết quả trên tương đương với việc trả về trực tiếp `Promise.resolve(1)`.
+
+---
+
+### 20.2. Từ khóa Await (`await`)
+
+- Từ khóa `await` làm cho JavaScript **tạm dừng việc thực thi hàm** cho đến khi Promise đó settle (hoàn thành) và trả về kết quả.
+
+**Cú pháp:**
+
+```javascript
+// chỉ hoạt động bên trong hàm async!
+let value = await promise;
+```
+
+**Cách thức hoạt động:**
+
+- `await` tạm thời đình chỉ việc thực thi hàm cho đến khi Promise được giải quyết, sau đó tiếp tục lại với kết quả của Promise.
+- Thao tác này **hoàn toàn không tiêu tốn tài nguyên CPU**, vì trong thời gian chờ đợi, JavaScript Engine có thể thực hiện các công việc khác (chạy các script khác, xử lý sự kiện DOM, v.v.).
+
+**Ví dụ:**
+
+```javascript
+async function f() {
+  let promise = new Promise((resolve, reject) => {
+    setTimeout(() => resolve("done!"), 1000);
+  });
+
+  let result = await promise; // tạm dừng ở đây cho đến khi promise resolve (*)
+
+  alert(result); // "done!"
+}
+
+f();
+```
+
+> ⚠️ **Lưu ý:** Từ khóa `await` **chỉ hoạt động bên trong các hàm được khai báo với `async`**. Nếu sử dụng `await` bên trong một hàm thông thường (non-async function), JavaScript sẽ báo lỗi cú pháp (`SyntaxError`).
+
+**Chờ nhiều Promise với `Promise.all`:**
+
+Khi cần chờ nhiều Promise chạy song song, ta có thể kết hợp bọc mảng Promise trong `Promise.all` và sử dụng `await`:
+
+```javascript
+// chờ tất cả các request hoàn thành song song
+let results = await Promise.all([
+  fetch(url1),
+  fetch(url2),
+  fetch(url3)
+]);
+```
+
+---
+
+### 20.3. Xử lý lỗi trong Async/await (Error handling)
+
+- Nếu một Promise `resolve` bình thường, `await promise` trả về kết quả.
+- Nhưng trong trường hợp Promise bị **`reject`**, nó sẽ **ném ra lỗi (throw error)** ngay tại dòng có chứa `await`, tương tự như khi chạy câu lệnh `throw`.
+
+**Ví dụ:**
+
+```javascript
+async function f() {
+  await Promise.reject(new Error("Whoops!"));
+}
+```
+
+Tương đương với:
+
+```javascript
+async function f() {
+  throw new Error("Whoops!");
+}
+```
+
+---
+
+#### 20.3.1. Xử lý lỗi bằng `try...catch`
+
+Trong thực tế, Promise có thể mất một khoảng thời gian trước khi bị reject. Ta có thể bắt lỗi đó bằng khối **`try...catch`** thông thường:
+
+```javascript
+async function f() {
+  try {
+    let response = await fetch('http://no-such-url');
+    let user = await response.json();
+  } catch(err) {
+    // bắt được cả lỗi mạng và lỗi ép kiểu JSON
+    alert(err); // TypeError: failed to fetch
+  }
+}
+
+f();
+```
+
+---
+
+#### 20.3.2. Xử lý lỗi bằng `.catch()`
+
+Nếu không sử dụng khối `try...catch` bên trong hàm, bản thân việc gọi hàm `async` `f()` sẽ trả về một **rejected Promise**. Do đó, ta có thể nối thêm phương thức **`.catch()`** khi gọi hàm để xử lý lỗi:
+
+```javascript
+async function f() {
+  let response = await fetch('http://no-such-url');
+}
+
+// f() trở thành một rejected promise
+f().catch(alert); // TypeError: failed to fetch
+```
+
+---
+
+### So sánh cú pháp: Promise thuần vs Async/Await
+
+| Tiêu chí | Promise thuần (`.then/.catch`) | Async / Await |
+|---|---|---|
+| **Cú pháp** | Dùng callback trong `.then()` | Viết dạng tuần tự giống code đồng bộ |
+| **Giá trị trả về** | `return value` chuyển tiếp sang `.then` kế tiếp | `let result = await promise` lấy trực tiếp giá trị |
+| **Xử lý lỗi** | `.catch(err => ...)` | Khối `try...catch` hoặc `.catch()` ở hàm async |
+| **Độ đọc hiểu** | Dễ bị lồng nhau khi xử lý phức tạp | Nhìn phẳng, dễ đọc và dễ debug hơn |
+
+---
+
+## 21. Modules (Module trong JavaScript)
+
+### Giới thiệu (Introduction)
+
+- Khi ứng dụng phát triển lớn hơn, chúng ta muốn chia nhỏ nó thành nhiều file riêng biệt, được gọi là các **"modules"**.
+- Một **module** đơn giản là **một file script**. Cứ 1 script là 1 module.
+- Các module có thể tải lẫn nhau và sử dụng hai chỉ thị đặc biệt **`export`** và **`import`** để trao đổi chức năng (gọi hàm, biến, class giữa các module với nhau):
+  - **`export`**: Gán nhãn cho các biến, hàm hoặc class mà module muốn công khai để bên ngoài có thể truy cập.
+  - **`import`**: Cho phép nạp các chức năng từ module khác vào module hiện tại.
+
+---
+
+### 21.1. Export (Xuất dữ liệu)
+
+Chúng ta có thể gán nhãn `export` trước bất kỳ khai báo nào: biến, hằng số, mảng, hàm hay lớp (class).
+
+**Export trực tiếp khi khai báo:**
+
+```javascript
+// export một mảng
+export let months = ['Jan', 'Feb', 'Mar', 'Apr', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// export một hằng số
+export const MODULES_BECAME_STANDARD_YEAR = 2015;
+
+// export một class
+export class User {
+  constructor(name) {
+    this.name = name;
+  }
+}
+```
+
+**Export riêng biệt ở cuối file:**
+
+Chúng ta cũng có thể khai báo trước rồi gom các thành phần cần export vào cặp ngoặc nhọn `{}` ở cuối file:
+
+```javascript
+// 📄 say.js
+function sayHi(user) {
+  alert(`Hello, ${user}!`);
+}
+
+function sayBye(user) {
+  alert(`Bye, ${user}!`);
+}
+
+export {sayHi, sayBye}; // danh sách các thành phần được export
+```
+
+**Đổi tên khi Export (`as`):**
+
+Sử dụng từ khóa `as` để export thành phần dưới một tên gọi khác:
+
+```javascript
+export {sayHi as hi, sayBye as bye};
+```
+
+---
+
+### 21.2. Import (Nhập dữ liệu)
+
+Thông thường, ta đưa danh sách các thành phần cần import vào trong cặp ngoặc nhọn `import {...}`:
+
+```javascript
+// 📄 main.js
+import {sayHi, sayBye} from './say.js';
+
+sayHi('John'); // Hello, John!
+sayBye('John'); // Bye, John!
+```
+
+**Đổi tên khi Import (`as`):**
+
+Có thể đổi tên thành phần nạp vào bằng từ khóa `as` để tránh trùng tên hoặc tạo tên gọi ngắn gọn hơn:
+
+```javascript
+// 📄 main.js
+import {sayHi as hi, sayBye as bye} from './say.js';
+
+hi('John');  // Hello, John!
+bye('John'); // Bye, John!
+```
+
+**Import tất cả thành một đối tượng (`import * as`):**
+
+```javascript
+import * as say from './say.js';
+
+say.sayHi('John');
+say.sayBye('John');
+```
+
+---
+
+### 21.3. Export default (Xuất mặc định)
+
+- Cú pháp **`export default`** được dùng khi một module chỉ chứa **một thành phần chính** (ví dụ: 1 file đại diện cho 1 class duy nhất).
+- Đặt `export default` ở trước đối tượng cần xuất:
+
+```javascript
+// 📄 user.js
+export default class User { // chỉ cần thêm từ khóa "default"
+  constructor(name) {
+    this.name = name;
+  }
+}
+```
+
+> ⚠️ **Lưu ý:** Mỗi file module chỉ có thể chứa **TỐI ĐA MỘT `export default`**.
+
+**Import một Default Export:**
+
+Khi nạp một đối tượng xuất mặc định, **không sử dụng cặp ngoặc nhọn `{}`** và có thể đặt tên bất kỳ cho đối tượng nạp vào:
+
+```javascript
+// 📄 main.js
+import User from './user.js'; // không dùng {User}, chỉ viết User
+
+new User('John');
+```
+
+---
+
+### 21.4. Re-export (Xuất chuyển tiếp)
+
+- Cú pháp **`export ... from ...`** cho phép nạp các thành phần từ một module khác và ngay lập tức export lại chúng ra bên ngoài (có thể đổi tên nếu cần).
+
+```javascript
+// Re-export sayHi từ file say.js
+export {sayHi} from './say.js';
+
+// Re-export default export của user.js dưới tên User
+export {default as User} from './user.js';
+```
+
+**Ứng dụng thực tế:**
+
+Tính năng Re-export thường dùng để tạo một **file điểm vào tập trung (central entry point)**, chẳng hạn như `index.js`, gom tất cả tính năng của dự án từ nhiều file nhỏ để các nơi khác chỉ cần import từ một địa chỉ duy nhất.
+
+---
+
+### Bảng so sánh Named Export vs Default Export
+
+| Tiêu chí | Named Export (`export {...}`) | Default Export (`export default`) |
+|---|---|---|
+| **Số lượng mỗi file** | Nhiều (không giới hạn) | **Tối đa 1** |
+| **Cú pháp Export** | `export const A = ...` hoặc `export {A}` | `export default A` |
+| **Cú pháp Import** | `import {A} from './file.js'` (phải có `{}`) | `import A from './file.js'` (**không** dùng `{}`) |
+| **Đặt lại tên khi Import** | Bắt buộc dùng `as`: `import {A as B}` | Tự do đặt tên: `import CustomName from ...` |
