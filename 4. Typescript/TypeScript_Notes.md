@@ -1148,8 +1148,1777 @@ Các tùy chọn cấu hình nâng cao trong `compilerOptions`:
 }
 ```
 
+---
 
+## 7. Classes & Interfaces (Lớp & Giao diện)
 
+### 7.1. Classes (Lớp)
 
+Một class trong TypeScript có thể bao gồm các thành phần sau:
+- **Constructor**: Hàm khởi tạo, được gọi khi tạo instance mới.
+- **Properties**: Các thuộc tính lưu trữ dữ liệu của đối tượng.
+- **Methods**: Các phương thức định nghĩa hành vi của đối tượng.
+
+```typescript
+class Employee {
+  // Properties
+  empName: string;
+  empCode: number;
+
+  // Constructor
+  constructor(name: string, code: number) {
+    this.empName = name;
+    this.empCode = code;
+  }
+
+  // Method
+  getSalary(): number {
+    return 10000;
+  }
+}
+```
+
+---
+
+### 7.2. Keyword `this` & `new`
+
+- **`this`**: Từ khóa `this` trong constructor dùng để truy cập các tham số và thuộc tính của class hiện tại.
+- **`new`**: Từ khóa `new` dùng để tạo một instance (đối tượng cụ thể) từ class.
+
+```typescript
+class Department {
+  name: string;
+
+  constructor(n: string) {
+    this.name = n; // 'this' trỏ đến instance hiện tại của class
+  }
+
+  describe() {
+    console.log('Department: ' + this.name);
+  }
+}
+
+// Từ khóa 'new' tạo một instance từ class Department
+const accounting = new Department('Accounting');
+accounting.describe(); // Output: "Department: Accounting"
+```
+
+---
+
+### 7.3. Access Modifiers: `private`, `public`, `readonly`
+
+Access Modifiers (Bộ chỉ định truy cập) định nghĩa phạm vi truy cập (visibility) của các thành phần dữ liệu trong class.
+
+| Modifier | Mô tả (Description) |
+| :--- | :--- |
+| `public` *(mặc định)* | Các thành phần được đánh dấu `public` có thể được truy cập từ **mọi nơi** (bên trong class, bên ngoài class, class con). |
+| `private` | Các thành phần được đánh dấu `private` **chỉ có thể truy cập bên trong class** khai báo chúng. |
+| `readonly` | Các thành phần được đánh dấu `readonly` có thể được truy cập từ bên ngoài class nhưng **không thể thay đổi giá trị** sau khi khởi tạo. |
+
+```typescript
+class Department {
+  public name: string;           // Truy cập được từ mọi nơi (mặc định)
+  private employees: string[] = []; // Chỉ truy cập được bên trong class
+  readonly id: number;           // Truy cập được nhưng không thể thay đổi
+
+  constructor(id: number, n: string) {
+    this.id = id;
+    this.name = n;
+  }
+
+  addEmployee(employee: string) {
+    this.employees.push(employee); // ✅ Hợp lệ - truy cập private bên trong class
+  }
+
+  printEmployeeInfo() {
+    console.log(this.employees.length);
+    console.log(this.employees);
+  }
+}
+
+const accounting = new Department(1, 'Accounting');
+accounting.addEmployee('Max');
+accounting.addEmployee('Anna');
+
+accounting.name = 'NEW NAME';       // ✅ Hợp lệ - public
+// accounting.employees[2] = 'Bob'; // ❌ Lỗi - employees là private
+// accounting.id = 5;               // ❌ Lỗi - id là readonly
+
+accounting.printEmployeeInfo();
+```
+
+---
+
+### 7.4. Inheritance (Kế thừa)
+
+Một class (subclass / derived class - lớp con) kế thừa từ một class khác (parent class / base class - lớp cha) sử dụng từ khóa `extends`.
+
+- Subclass **kế thừa tất cả thuộc tính và phương thức** từ parent class (ngoại trừ các thành phần được đánh dấu `private` và constructor).
+
+#### Cú pháp cơ bản
+
+```typescript
+class ChildClass extends ParentClass {
+  // code here
+}
+```
+
+#### Phân loại Kế thừa (Inheritance Classification)
+
+```
+              [ Inheritance ]
+                     │
+       ┌─────────────┼─────────────┐
+       ▼             ▼             ▼
+   [ Single ]   [ Multiple ]  [ Multi-level ]
+  Mỗi class    Một class kế    Chuỗi kế thừa
+  chỉ kế thừa  thừa từ nhiều   nhiều tầng:
+  từ 1 parent  class (TS KHÔNG  A → B → C
+  class        hỗ trợ)
+```
+
+- **Single Inheritance**: Mỗi class chỉ kế thừa từ **một** parent class duy nhất.
+- **Multiple Inheritance**: Một class kế thừa từ **nhiều** class (TypeScript **KHÔNG** hỗ trợ multiple inheritance).
+- **Multi-level Inheritance**: Kế thừa theo chuỗi nhiều tầng (A → B → C: C kế thừa B, B kế thừa A).
+
+#### `super()` - Gọi Constructor lớp cha
+
+- Sử dụng `super()` để gọi constructor của parent class và truy cập các thuộc tính, phương thức của parent class.
+- **Quy tắc quan trọng**: Mỗi child class có constructor **bắt buộc phải gọi `super()`** để thực thi constructor của parent class **trước khi** truy cập body constructor của child class (trước khi dùng `this`).
+- Subclass có thể gọi phương thức của parent class thông qua từ khóa `super`.
+
+```typescript
+class Department {
+  name: string;
+
+  constructor(n: string) {
+    this.name = n;
+  }
+
+  describe() {
+    console.log('Department: ' + this.name);
+  }
+}
+
+class ITDepartment extends Department {
+  admins: string[];
+
+  constructor(admins: string[]) {
+    super('IT');         // Gọi constructor của Department (parent class)
+    this.admins = admins; // Sau super() mới được dùng 'this'
+  }
+
+  printAdmins() {
+    console.log(this.admins);
+  }
+}
+
+const it = new ITDepartment(['Max', 'Anna']);
+it.describe();     // Output: "Department: IT" (kế thừa từ parent)
+it.printAdmins();  // Output: ['Max', 'Anna']
+```
+
+---
+
+### 7.5. Overriding Methods (Ghi đè phương thức)
+
+Method Overriding là quá trình một phương thức trong parent class được **định nghĩa lại** bởi một phương thức cùng tên và cùng tham số trong child class.
+
+```typescript
+class Department {
+  name: string;
+  employees: string[] = [];
+
+  constructor(n: string) {
+    this.name = n;
+  }
+
+  addEmployee(employee: string) {
+    this.employees.push(employee);
+  }
+
+  describe() {
+    console.log('Department: ' + this.name);
+  }
+}
+
+class AccountingDepartment extends Department {
+  constructor() {
+    super('Accounting');
+  }
+
+  // Override phương thức addEmployee từ parent class
+  addEmployee(name: string) {
+    if (name === 'Max') {
+      return; // Không cho phép thêm nhân viên tên 'Max'
+    }
+    this.employees.push(name);
+  }
+
+  // Override phương thức describe từ parent class
+  describe() {
+    console.log('Accounting Department');
+  }
+}
+
+const acc = new AccountingDepartment();
+acc.addEmployee('Max');  // Bị chặn bởi logic override
+acc.addEmployee('Anna'); // ✅ Được thêm vào
+acc.describe();          // Output: "Accounting Department" (override)
+```
+
+---
+
+### 7.6. `protected` (Bộ chỉ định truy cập Protected)
+
+Tổng hợp các Access Modifiers trong TypeScript:
+
+| Modifier | Bên trong Class | Class Con (Subclass) | Bên ngoài Class |
+| :--- | :---: | :---: | :---: |
+| `public` | ✅ | ✅ | ✅ |
+| `protected` | ✅ | ✅ | ❌ |
+| `private` | ✅ | ❌ | ❌ |
+
+- **`protected`**: Các thành phần được đánh dấu `protected` chỉ có thể truy cập bên trong class khai báo chúng **và** các subclass (class con) kế thừa.
+- So với `private`: `private` chỉ truy cập được trong class chứa nó, `protected` cho phép cả class con truy cập.
+
+```typescript
+class Department {
+  protected employees: string[] = []; // Accessible trong class này VÀ class con
+
+  constructor(public name: string) {}
+
+  addEmployee(employee: string) {
+    this.employees.push(employee);
+  }
+}
+
+class ITDepartment extends Department {
+  constructor() {
+    super('IT');
+  }
+
+  printEmployees() {
+    // ✅ Hợp lệ - truy cập protected từ class con
+    console.log(this.employees);
+  }
+}
+
+const it = new ITDepartment();
+it.addEmployee('Max');
+it.printEmployees();        // ✅ Output: ['Max']
+// it.employees;            // ❌ Lỗi - không thể truy cập protected từ bên ngoài class
+```
+
+---
+
+### 7.7. Static Methods & Properties (Phương thức & Thuộc tính tĩnh)
+
+Khi các thành phần dữ liệu (thuộc tính hoặc phương thức) được đánh dấu là `static`:
+- Các thành phần **có thể truy cập trực tiếp thông qua tên class** mà không cần dùng từ khóa `this` bên trong class.
+- Có thể truy cập trực tiếp từ **bên ngoài class** mà không cần dùng `new` để tạo instance.
+
+```typescript
+class MathHelper {
+  static PI: number = 3.14159;        // Static property
+
+  static circleArea(r: number): number { // Static method
+    return this.PI * r * r;            // Truy cập static property qua class name
+  }
+}
+
+// Truy cập KHÔNG cần tạo instance (new)
+console.log(MathHelper.PI);              // Output: 3.14159
+console.log(MathHelper.circleArea(10));   // Output: 314.159
+
+// ❌ Không cần: const math = new MathHelper();
+```
+
+> ⚠️ **Lưu ý**: Bên trong class, **không thể** dùng `this` để truy cập các thành phần `static` từ các phương thức non-static. Phải dùng `ClassName.staticMember` để truy cập.
+
+```typescript
+class Department {
+  static fiscalYear = 2024;
+
+  describe() {
+    // console.log(this.fiscalYear);         // ❌ Lỗi
+    console.log(Department.fiscalYear);      // ✅ Đúng cách
+  }
+}
+```
+
+---
+
+### 7.8. Abstract Class (Lớp trừu tượng)
+
+- **Abstract Class**: Là lớp cha (parent class) dành cho tất cả các class cùng bản chất (loại, danh mục, nhiệm vụ).
+- Các phương thức trong abstract class **không chứa phần triển khai** (implementation) và **bắt buộc phải được triển khai** trong derived class (class con).
+- **Không thể tạo instance** trực tiếp từ abstract class (không thể dùng `new`).
+
+#### Cú pháp
+
+```typescript
+abstract class ClassName {
+  abstract methodName(param: type): returnType; // Không có body
+}
+```
+
+#### Ví dụ thực tế
+
+```typescript
+abstract class Department {
+  constructor(public name: string) {}
+
+  // Abstract method - bắt buộc class con phải triển khai
+  abstract describe(): void;
+
+  printName() {
+    console.log('Department: ' + this.name);
+  }
+}
+
+class ITDepartment extends Department {
+  constructor() {
+    super('IT');
+  }
+
+  // ✅ Bắt buộc triển khai phương thức abstract
+  describe() {
+    console.log('IT Department - ID');
+  }
+}
+
+class AccountingDepartment extends Department {
+  constructor() {
+    super('Accounting');
+  }
+
+  // ✅ Bắt buộc triển khai phương thức abstract
+  describe() {
+    console.log('Accounting Department - ID');
+  }
+}
+
+// const dept = new Department('General'); // ❌ Lỗi: Không thể tạo instance từ abstract class
+const it = new ITDepartment();
+it.describe();  // Output: "IT Department - ID"
+it.printName(); // Output: "Department: IT"
+```
+
+---
+
+### 7.9. Interfaces (Giao diện)
+
+- **Interface** mô tả / định nghĩa **cấu trúc của một đối tượng** (structure of an object).
+- Interface **chỉ chứa các khai báo** thuộc tính, phương thức, sự kiện — không chứa phần triển khai.
+- **Lưu ý**: Trình biên dịch TypeScript **không** chuyển đổi Interface sang JavaScript (Interface chỉ tồn tại ở compile-time).
+
+#### Cú pháp
+
+```typescript
+interface InterfaceName {
+  propertyName: type;
+  methodName(param: type): returnType;
+}
+```
+
+#### Ví dụ thực tế
+
+```typescript
+interface Person {
+  name: string;
+  age: number;
+
+  greet(phrase: string): void;
+}
+
+let user1: Person;
+
+user1 = {
+  name: 'Max',
+  age: 30,
+  greet(phrase: string) {
+    console.log(phrase + ' ' + this.name);
+  }
+};
+
+user1.greet('Hi there, I am'); // Output: "Hi there, I am Max"
+```
+
+---
+
+### 7.10. Interfaces as Function Types (Interface mô tả hàm)
+
+Interface có thể được sử dụng để mô tả cấu trúc của một hàm bằng cách cung cấp **function signature** (chữ ký hàm): khai báo hàm chỉ với danh sách tham số và kiểu trả về.
+
+```typescript
+interface AddFn {
+  (a: number, b: number): number;
+}
+
+let add: AddFn;
+
+add = (n1: number, n2: number) => {
+  return n1 + n2;
+};
+
+console.log(add(5, 10)); // Output: 15
+```
+
+---
+
+### 7.11. Readonly Properties in Interface (Thuộc tính chỉ đọc)
+
+Các thuộc tính trong interface được đánh dấu `readonly`: thuộc tính **chỉ có thể được gán giá trị khi đối tượng được tạo lần đầu** và không thể thay đổi sau đó.
+
+```typescript
+interface Person {
+  readonly id: number;
+  name: string;
+}
+
+let user: Person = {
+  id: 1,
+  name: 'Max'
+};
+
+console.log(user.id);   // ✅ Hợp lệ - đọc giá trị
+// user.id = 5;          // ❌ Lỗi: Cannot assign to 'id' because it is a read-only property
+user.name = 'Anna';     // ✅ Hợp lệ - name không phải readonly
+```
+
+---
+
+### 7.12. Optional Properties in Interface (Thuộc tính tùy chọn)
+
+Không phải tất cả thuộc tính trong interface đều bắt buộc. Sử dụng dấu `?` sau tên thuộc tính để đánh dấu thuộc tính đó là **tùy chọn** (tương tự optional parameter trong hàm).
+
+```typescript
+interface Person {
+  name: string;
+  age: number;
+  nickname?: string;  // Thuộc tính tùy chọn - có thể có hoặc không
+  phone?: string;     // Thuộc tính tùy chọn
+}
+
+// ✅ Hợp lệ - không cần cung cấp nickname và phone
+let user1: Person = {
+  name: 'Max',
+  age: 30
+};
+
+// ✅ Hợp lệ - cung cấp thêm thuộc tính tùy chọn
+let user2: Person = {
+  name: 'Anna',
+  age: 25,
+  nickname: 'Annie',
+  phone: '0123-456-789'
+};
+```
+
+---
+
+### 7.13. Using Interfaces with Classes (Sử dụng Interface với Class)
+
+#### Cách 1: Class triển khai (implements) Interface
+
+Sử dụng từ khóa `implements` để mô tả một class triển khai một interface. Class **bắt buộc phải cài đặt** tất cả thuộc tính và phương thức đã khai báo trong interface.
+
+```typescript
+interface Greetable {
+  name: string;
+  greet(phrase: string): void;
+}
+
+class Person implements Greetable {
+  name: string;
+  age: number;
+
+  constructor(n: string, a: number) {
+    this.name = n;
+    this.age = a;
+  }
+
+  greet(phrase: string) {
+    console.log(phrase + ' ' + this.name);
+  }
+}
+
+let user: Greetable;
+user = new Person('Max', 30);
+user.greet('Hello, I am'); // Output: "Hello, I am Max"
+```
+
+> 💡 **Lưu ý**: Một class có thể **implements nhiều interface** cùng lúc (cách nhau bởi dấu phẩy), đây là cách TypeScript hỗ trợ tính đa kế thừa thông qua interface thay vì `extends` nhiều class.
+
+```typescript
+interface Greetable {
+  name: string;
+  greet(phrase: string): void;
+}
+
+interface Printable {
+  print(): void;
+}
+
+class Person implements Greetable, Printable {
+  name: string;
+
+  constructor(n: string) {
+    this.name = n;
+  }
+
+  greet(phrase: string) {
+    console.log(phrase + ' ' + this.name);
+  }
+
+  print() {
+    console.log('Printing person: ' + this.name);
+  }
+}
+```
+
+#### Cách 2: Interface kế thừa (extends) Interface
+
+Sử dụng từ khóa `extends` để mô tả một interface kế thừa từ một interface khác. Interface con sẽ **bao gồm toàn bộ khai báo** của interface cha.
+
+```typescript
+interface Named {
+  readonly name: string;
+}
+
+interface Greetable extends Named {
+  greet(phrase: string): void;
+}
+
+// Class triển khai Greetable phải cài đặt cả 'name' (từ Named) và 'greet' (từ Greetable)
+class Person implements Greetable {
+  name: string;
+  age: number;
+
+  constructor(n: string, a: number) {
+    this.name = n;
+    this.age = a;
+  }
+
+  greet(phrase: string) {
+    console.log(phrase + ' ' + this.name);
+  }
+}
+```
+
+> 💡 **Khác biệt với Class**: Interface **có thể `extends` nhiều interface** cùng lúc (tương đương multiple inheritance), trong khi Class chỉ có thể `extends` một parent class duy nhất.
+
+```typescript
+interface Named {
+  name: string;
+}
+
+interface Aged {
+  age: number;
+}
+
+// Interface kế thừa từ nhiều interface
+interface Person extends Named, Aged {
+  greet(): void;
+}
+```
+
+---
+
+## 8. Advanced Types (Kiểu nâng cao)
+
+### 8.1. Intersection Type (Kiểu giao nhau)
+
+- **Intersection Type**: Giao nhau (kết hợp) các kiểu dữ liệu lại với nhau bằng toán tử `&`.
+- Kiểu intersection sẽ **bao gồm tất cả thuộc tính** từ các kiểu được giao nhau.
+
+```typescript
+// Intersection với Type Alias
+type Admin = {
+  name: string;
+  privileges: string[];
+};
+
+type Employee = {
+  name: string;
+  startDate: Date;
+};
+
+// ElevatedEmployee có TẤT CẢ thuộc tính từ Admin VÀ Employee
+type ElevatedEmployee = Admin & Employee;
+
+const e1: ElevatedEmployee = {
+  name: 'Max',
+  privileges: ['create-server'],
+  startDate: new Date()
+};
+```
+
+```typescript
+// Intersection với Union Types
+type Combinable = string | number;
+type Numeric = number | boolean;
+
+type Universal = Combinable & Numeric; // Kết quả: number (giao nhau giữa 2 union)
+```
+
+> 💡 **Lưu ý**: Với **object types**, intersection tạo ra kiểu có **tất cả** thuộc tính. Với **union types**, intersection tạo ra kiểu **chung** (phần giao) giữa các union.
+
+---
+
+### 8.2. Type Guard (Bảo vệ kiểu)
+
+**Type Guard** cho phép thu hẹp kiểu dữ liệu của đối tượng bên trong một khối điều kiện (conditional block). TypeScript hỗ trợ 3 kỹ thuật Type Guard chính:
+
+#### 8.2.1. `typeof` — Kiểm tra kiểu nguyên thủy
+
+Sử dụng `typeof` để kiểm tra các kiểu nguyên thủy như `string`, `number`, `boolean`.
+
+```typescript
+type Combinable = string | number;
+
+function add(a: Combinable, b: Combinable) {
+  // Type Guard sử dụng typeof
+  if (typeof a === 'string' || typeof b === 'string') {
+    return a.toString() + b.toString(); // Nối chuỗi
+  }
+  return a + b; // Phép cộng số
+}
+
+console.log(add('Hello', ' World')); // Output: "Hello World"
+console.log(add(10, 20));            // Output: 30
+```
+
+#### 8.2.2. `instanceof` — Kiểm tra instance của class
+
+Sử dụng `instanceof` để kiểm tra xem một đối tượng có phải là instance của một class cụ thể hay không.
+
+```typescript
+class Car {
+  drive() {
+    console.log('Driving a car...');
+  }
+}
+
+class Truck {
+  drive() {
+    console.log('Driving a truck...');
+  }
+
+  loadCargo(amount: number) {
+    console.log('Loading cargo: ' + amount);
+  }
+}
+
+type Vehicle = Car | Truck;
+
+function useVehicle(vehicle: Vehicle) {
+  vehicle.drive();
+
+  // Type Guard sử dụng instanceof
+  if (vehicle instanceof Truck) {
+    vehicle.loadCargo(1000); // Chỉ gọi được khi vehicle là Truck
+  }
+}
+
+useVehicle(new Car());   // Output: "Driving a car..."
+useVehicle(new Truck());  // Output: "Driving a truck..." + "Loading cargo: 1000"
+```
+
+#### 8.2.3. `in` — Kiểm tra sự tồn tại của thuộc tính
+
+Sử dụng toán tử `in` để kiểm tra xem một thuộc tính có tồn tại trong đối tượng hay không.
+
+```typescript
+type Admin = {
+  name: string;
+  privileges: string[];
+};
+
+type Employee = {
+  name: string;
+  startDate: Date;
+};
+
+type UnknownEmployee = Employee | Admin;
+
+function printEmployeeInfo(emp: UnknownEmployee) {
+  console.log('Name: ' + emp.name);
+
+  // Type Guard sử dụng 'in'
+  if ('privileges' in emp) {
+    console.log('Privileges: ' + emp.privileges);
+  }
+
+  if ('startDate' in emp) {
+    console.log('Start Date: ' + emp.startDate);
+  }
+}
+
+printEmployeeInfo({ name: 'Max', privileges: ['create-server'] });
+// Output: "Name: Max" + "Privileges: create-server"
+
+printEmployeeInfo({ name: 'Anna', startDate: new Date() });
+// Output: "Name: Anna" + "Start Date: ..."
+```
+
+#### Tổng hợp 3 kỹ thuật Type Guard
+
+| Kỹ thuật | Dùng khi | Cú pháp |
+| :--- | :--- | :--- |
+| `typeof` | Kiểm tra kiểu nguyên thủy (`string`, `number`, `boolean`) | `if (typeof x === 'string')` |
+| `instanceof` | Kiểm tra instance của class | `if (x instanceof ClassName)` |
+| `in` | Kiểm tra thuộc tính tồn tại trong object | `if ('prop' in obj)` |
+
+---
+
+### 8.3. Discriminated Unions (Union phân biệt)
+
+- **Discriminated Union**: Được sử dụng khi trong class hoặc interface có các thành phần dữ liệu mang giá trị **literal** (cố định).
+- Giúp **phân biệt** giữa các thành phần thuộc kiểu union bằng một thuộc tính chung (discriminant property).
+
+```typescript
+interface Bird {
+  type: 'bird';       // Literal type - discriminant property
+  flyingSpeed: number;
+}
+
+interface Horse {
+  type: 'horse';      // Literal type - discriminant property
+  runningSpeed: number;
+}
+
+type Animal = Bird | Horse;
+
+function moveAnimal(animal: Animal) {
+  let speed: number;
+
+  // Discriminated Union - dùng thuộc tính 'type' để phân biệt
+  switch (animal.type) {
+    case 'bird':
+      speed = animal.flyingSpeed;
+      break;
+    case 'horse':
+      speed = animal.runningSpeed;
+      break;
+  }
+
+  console.log('Moving at speed: ' + speed);
+}
+
+moveAnimal({ type: 'bird', flyingSpeed: 100 });
+// Output: "Moving at speed: 100"
+
+moveAnimal({ type: 'horse', runningSpeed: 60 });
+// Output: "Moving at speed: 60"
+```
+
+> 💡 **Ưu điểm**: TypeScript sẽ **tự động gợi ý** (IntelliSense) các giá trị hợp lệ cho discriminant property trong `switch/case`, giảm thiểu lỗi typo và logic.
+
+---
+
+### 8.4. Type Casting (Ép kiểu)
+
+- **Type Casting**: Cho phép chuyển đổi một biến từ kiểu dữ liệu này sang kiểu dữ liệu khác.
+- Sử dụng từ khóa `as` hoặc toán tử `<>`.
+
+```typescript
+// Ví dụ: Truy cập phần tử DOM và ép kiểu
+
+// Cách 1: Sử dụng toán tử <> (Angle-bracket syntax)
+const userInputElement1 = <HTMLInputElement>document.getElementById('user-input')!;
+userInputElement1.value = 'Hello!';
+
+// Cách 2: Sử dụng từ khóa 'as' (Khuyên dùng trong React / JSX)
+const userInputElement2 = document.getElementById('user-input')! as HTMLInputElement;
+userInputElement2.value = 'Hello!';
+```
+
+> ⚠️ **Lưu ý**: Dấu `!` (Non-null assertion operator) đặt sau biểu thức để thông báo cho TypeScript rằng giá trị **chắc chắn không phải `null`**. Nếu không chắc chắn, hãy dùng `if` kiểm tra thay vì `!`.
+
+```typescript
+// Cách an toàn hơn - kiểm tra null trước khi ép kiểu
+const userInputElement = document.getElementById('user-input');
+
+if (userInputElement) {
+  (userInputElement as HTMLInputElement).value = 'Hello!';
+}
+```
+
+---
+
+## 9. Generics (Kiểu tổng quát)
+
+### 9.1. Problem — Vấn đề đặt ra (Tại sao cần Generics?)
+
+#### Xét hàm sau:
+
+```typescript
+function identity(arg: number): number {
+  return arg;
+}
+```
+
+**Vấn đề**:
+- **Input**: chỉ nhận kiểu `number`.
+- **Return**: chỉ trả về kiểu `number`.
+- ❌ **Không thể mở rộng / tái sử dụng** cho các kiểu dữ liệu khác (`string`, `boolean`,...).
+
+#### Thử dùng `any`?
+
+```typescript
+function identity(arg: any): any {
+  return arg;
+}
+
+let result = identity('Hello');
+// result có kiểu 'any' → Không thể phán đoán kiểu trả về
+// → Không thể thực hiện xử lý tiếp theo an toàn (ví dụ: result.length có thể lỗi runtime)
+```
+
+**Vấn đề với `any`**:
+- ❌ Mất đi khả năng **phán đoán kiểu trả về** (Type Inference).
+- ❌ Không thể thực hiện xử lý tiếp theo một cách an toàn.
+- ❌ Mất toàn bộ lợi ích của Static Typing.
+
+---
+
+### 9.2. Problem Solving — Giải pháp: Sử dụng Generics
+
+Tạo một **type variable** (biến kiểu / type parameter / generic parameter) bằng cách đặt biến `T` bên trong dấu `<>`.
+
+- Biến `T` trở thành **placeholder** (chỗ giữ chỗ) cho một kiểu dữ liệu mà ta muốn truyền vào hàm.
+- `T` là viết tắt của **Type**. Thực tế có thể đặt tên bất kỳ (ví dụ: `U`, `K`, `V`, `TData`,...).
+
+```typescript
+// Hàm Generic - T là type variable
+function identity<T>(arg: T): T {
+  return arg;
+}
+
+// Gọi hàm - TypeScript tự suy luận kiểu
+let output1 = identity('Hello');  // T = string → output1: string ✅
+let output2 = identity(100);      // T = number → output2: number ✅
+let output3 = identity(true);     // T = boolean → output3: boolean ✅
+
+// Hoặc chỉ định kiểu rõ ràng
+let output4 = identity<string>('World'); // T = string
+```
+
+> ✅ **Ưu điểm so với `any`**: Giữ nguyên thông tin kiểu dữ liệu → IDE hỗ trợ IntelliSense đầy đủ → Phát hiện lỗi ngay lúc compile-time.
+
+---
+
+### 9.3. Generics (Kiểu tổng quát)
+
+- **Generics**: Là công cụ để tạo các **thành phần có thể tái sử dụng** (reusable components). Có thể tạo các thành phần hoạt động trên **nhiều kiểu dữ liệu khác nhau** thay vì chỉ một kiểu dữ liệu duy nhất.
+- **Generic Type**: Là khả năng **truyền một kiểu dữ liệu** vào các thành phần (function, class, interface) **dưới dạng tham số** (type parameter).
+
+#### Từ khóa `extends` — Giới hạn phạm vi kiểu
+
+Sử dụng `extends` để **ràng buộc** (constraint) phạm vi kiểu dữ liệu mà type variable có thể nhận.
+
+```typescript
+// T bị giới hạn: chỉ chấp nhận kiểu có thuộc tính 'length'
+function loggingIdentity<T extends { length: number }>(arg: T): T {
+  console.log(arg.length); // ✅ Hợp lệ vì T chắc chắn có 'length'
+  return arg;
+}
+
+loggingIdentity('Hello');        // ✅ string có length
+loggingIdentity([1, 2, 3]);      // ✅ array có length
+loggingIdentity({ length: 10 }); // ✅ object có thuộc tính length
+// loggingIdentity(100);         // ❌ Lỗi: number không có thuộc tính length
+```
+
+#### Default Value — Giá trị mặc định cho type variable
+
+Có thể đặt giá trị mặc định cho type variable bằng cú pháp `<T = DefaultType>`.
+
+```typescript
+// T mặc định là string nếu không chỉ định
+function createArray<T = string>(length: number, value: T): T[] {
+  return Array(length).fill(value);
+}
+
+let arr1 = createArray(3, 'hello');  // T = string (suy luận từ 'hello')
+let arr2 = createArray<number>(3, 0); // T = number (chỉ định rõ ràng)
+let arr3 = createArray(3, 'default'); // T = string (mặc định)
+```
+
+---
+
+### 9.4. Generic Function (Hàm Generic)
+
+#### Single Type Variable (Một biến kiểu)
+
+```typescript
+function identity<T>(arg: T): T {
+  return arg;
+}
+
+let str = identity<string>('Hello');  // T = string
+let num = identity<number>(42);       // T = number
+```
+
+#### Multiple Type Variables (Nhiều biến kiểu)
+
+```typescript
+function merge<T, U>(objA: T, objB: U): T & U {
+  return { ...objA, ...objB };
+}
+
+const merged = merge(
+  { name: 'Max' },
+  { age: 30 }
+);
+
+console.log(merged.name); // ✅ "Max"
+console.log(merged.age);  // ✅ 30
+```
+
+#### Array Method với Generic
+
+```typescript
+// Hàm generic nhận mảng kiểu T
+function getFirstElement<T>(arr: T[]): T {
+  return arr[0];
+}
+
+let first1 = getFirstElement([1, 2, 3]);          // T = number → first1: number
+let first2 = getFirstElement(['a', 'b', 'c']);     // T = string → first2: string
+let first3 = getFirstElement<boolean>([true, false]); // T = boolean
+```
+
+#### `keyof` Constraint (Ràng buộc keyof)
+
+Sử dụng `keyof` để ràng buộc type variable chỉ nhận các **tên thuộc tính** (key) hợp lệ của một đối tượng.
+
+```typescript
+function extractAndConvert<T extends object, U extends keyof T>(obj: T, key: U) {
+  return 'Value: ' + obj[key];
+}
+
+console.log(extractAndConvert({ name: 'Max' }, 'name')); // ✅ Output: "Value: Max"
+// extractAndConvert({ name: 'Max' }, 'age');             // ❌ Lỗi: 'age' không tồn tại trong object
+```
+
+> 💡 **Giải thích**: `U extends keyof T` nghĩa là `U` chỉ có thể là một trong các key (tên thuộc tính) của đối tượng `T`. Điều này đảm bảo truy cập thuộc tính luôn an toàn.
+
+---
+
+### 9.5. Generic Interface (Interface tổng quát)
+
+#### Generic Interface mô tả Object
+
+```typescript
+interface Pair<T, U> {
+  first: T;
+  second: U;
+}
+
+let pair1: Pair<string, number> = {
+  first: 'Hello',
+  second: 42
+};
+
+let pair2: Pair<boolean, string> = {
+  first: true,
+  second: 'World'
+};
+```
+
+#### Generic Interface mô tả Function
+
+```typescript
+interface GenericFn<T> {
+  (arg: T): T;
+}
+
+// Sử dụng interface làm kiểu cho hàm
+let myIdentity: GenericFn<number> = function(arg: number): number {
+  return arg;
+};
+
+console.log(myIdentity(100)); // Output: 100
+```
+
+```typescript
+// Ví dụ mở rộng: Generic Interface cho hàm phức tạp hơn
+interface Transformer<T, U> {
+  (input: T): U;
+}
+
+let stringToNumber: Transformer<string, number> = function(input: string): number {
+  return parseInt(input);
+};
+
+console.log(stringToNumber('42')); // Output: 42
+```
+
+---
+
+### 9.6. Generic Class (Class tổng quát)
+
+Type parameter được đặt trong `<>` **ngay sau tên class**.
+
+```typescript
+class DataStorage<T> {
+  private data: T[] = [];
+
+  addItem(item: T) {
+    this.data.push(item);
+  }
+
+  removeItem(item: T) {
+    this.data.splice(this.data.indexOf(item), 1);
+  }
+
+  getItems(): T[] {
+    return [...this.data]; // Trả về bản sao mảng
+  }
+}
+
+// Sử dụng với kiểu string
+const textStorage = new DataStorage<string>();
+textStorage.addItem('Max');
+textStorage.addItem('Anna');
+textStorage.removeItem('Max');
+console.log(textStorage.getItems()); // Output: ['Anna']
+
+// Sử dụng với kiểu number
+const numberStorage = new DataStorage<number>();
+numberStorage.addItem(1);
+numberStorage.addItem(2);
+console.log(numberStorage.getItems()); // Output: [1, 2]
+```
+
+#### Generic Class với Constraint
+
+```typescript
+class DataStorage<T extends string | number | boolean> {
+  private data: T[] = [];
+
+  addItem(item: T) {
+    this.data.push(item);
+  }
+
+  removeItem(item: T) {
+    if (this.data.indexOf(item) === -1) return;
+    this.data.splice(this.data.indexOf(item), 1);
+  }
+
+  getItems(): T[] {
+    return [...this.data];
+  }
+}
+
+const textStorage = new DataStorage<string>();   // ✅ Hợp lệ
+const numStorage = new DataStorage<number>();    // ✅ Hợp lệ
+// const objStorage = new DataStorage<object>(); // ❌ Lỗi: object không thuộc constraint
+```
+
+---
+
+### 9.7. Generic Class Implements Generic Interface
+
+Generic Class có thể triển khai (implements) một Generic Interface. Khi đó, class phải **cài đặt tất cả thuộc tính và phương thức** được khai báo trong interface.
+
+```typescript
+// Generic Interface
+interface Repository<T> {
+  getAll(): T[];
+  getById(id: number): T | undefined;
+  add(item: T): void;
+}
+
+// Generic Class implements Generic Interface
+class GenericRepository<T extends { id: number }> implements Repository<T> {
+  private items: T[] = [];
+
+  getAll(): T[] {
+    return [...this.items];
+  }
+
+  getById(id: number): T | undefined {
+    return this.items.find(item => item.id === id);
+  }
+
+  add(item: T): void {
+    this.items.push(item);
+  }
+}
+
+// Sử dụng
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+const userRepo = new GenericRepository<User>();
+
+userRepo.add({ id: 1, name: 'Max', email: 'max@test.com' });
+userRepo.add({ id: 2, name: 'Anna', email: 'anna@test.com' });
+
+console.log(userRepo.getAll());
+// Output: [{ id: 1, name: 'Max', ... }, { id: 2, name: 'Anna', ... }]
+
+console.log(userRepo.getById(1));
+// Output: { id: 1, name: 'Max', email: 'max@test.com' }
+```
+
+```typescript
+// Tái sử dụng với kiểu dữ liệu khác
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+}
+
+const productRepo = new GenericRepository<Product>();
+
+productRepo.add({ id: 1, title: 'Laptop', price: 999 });
+productRepo.add({ id: 2, title: 'Phone', price: 699 });
+
+console.log(productRepo.getAll());
+// Output: [{ id: 1, title: 'Laptop', ... }, { id: 2, title: 'Phone', ... }]
+```
+
+> 💡 **Ưu điểm**: Viết **một lần** `GenericRepository<T>`, tái sử dụng cho **mọi kiểu dữ liệu** (`User`, `Product`, `Order`,...) mà vẫn đảm bảo an toàn kiểu dữ liệu (Type Safety).
+
+---
+
+## 10. Decorators (Bộ trang trí)
+
+### 10.1. What is a Decorator? (Decorator là gì?)
+
+- **Decorator**: Là một cú pháp khai báo đặc biệt (special declaration syntax) đi kèm với khai báo **class, method, accessor, property hoặc parameter**.
+- **Nhiệm vụ**: Decorator có nhiệm vụ **thay đổi hoặc bổ sung** cho đối tượng được trang trí (decorated).
+- **Cú pháp**: `@expression` — trong đó `expression` trỏ tới một hàm sẽ được gọi tại **thời điểm chạy** (run-time).
+
+```typescript
+// Decorator là một hàm
+function Logger(constructor: Function) {
+  console.log('Logging...');
+  console.log(constructor);
+}
+
+// Sử dụng decorator với cú pháp @
+@Logger
+class Person {
+  name = 'Max';
+
+  constructor() {
+    console.log('Creating person object...');
+  }
+}
+```
+
+---
+
+### 10.2. Types of Decorators (Các loại Decorator)
+
+Decorator có thể được áp dụng lên nhiều thành phần khác nhau trong class:
+
+```
+  @Theme                          ◄── Class Decorator
+  class Employee {
+
+      @Required                   ◄── Property Decorator
+      employeeID: number;
+
+      @Required                   ◄── Property Decorator
+      fullName: string;
+
+      @Track                      ◄── Method Decorator
+      showDetails(): void {
+      }
+  }
+```
+
+| Loại Decorator | Áp dụng lên | Mô tả |
+| :--- | :--- | :--- |
+| **Class Decorator** | Khai báo class | Theo dõi, sửa đổi hoặc thay thế định nghĩa class |
+| **Property Decorator** | Khai báo thuộc tính | Áp dụng lên thuộc tính của class |
+| **Method Decorator** | Khai báo phương thức | Áp dụng lên phương thức của class |
+| **Accessor Decorator** | Getter / Setter | Giống method decorator nhưng áp dụng cho getter/setter |
+| **Parameter Decorator** | Tham số của method/constructor | Áp dụng lên tham số trong hàm |
+
+---
+
+### 10.3. Decorator Settings (Cấu hình Decorator)
+
+Để sử dụng Decorator trong TypeScript, cần bật tùy chọn trong file `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true
+  }
+}
+```
+
+> ⚠️ **Lưu ý**: Bỏ comment (uncomment) thuộc tính `"experimentalDecorators": true` trong file `tsconfig.json` để kích hoạt tính năng Decorator.
+
+---
+
+### 10.4. Declare Decorator (Khai báo Decorator)
+
+#### Cách 1: Single Line Declaration (Khai báo một dòng)
+
+```typescript
+@Logger
+class Person {
+  // ...
+}
+```
+
+#### Cách 2: Multiple Line Declaration (Khai báo nhiều dòng — nhiều Decorator)
+
+Có thể áp dụng **nhiều decorator** lên cùng một thành phần. Các decorator được thực thi **từ dưới lên trên** (bottom-up).
+
+```typescript
+@Logger
+@Theme
+class Person {
+  // Thứ tự thực thi: @Theme chạy trước → @Logger chạy sau
+}
+```
+
+---
+
+### 10.5. Priorities of Decorators (Thứ tự ưu tiên Decorator)
+
+Khi decorator được áp dụng lên constructor của class, thứ tự ưu tiên thực thi như sau:
+
+| Thứ tự | Loại Decorator | Ưu tiên |
+| :---: | :--- | :---: |
+| 1️⃣ | **Parameter Decorator** | Cao nhất |
+| 2️⃣ | **Method Decorator** | |
+| 3️⃣ | **Accessor / Property Decorator** | |
+| 4️⃣ | **Class Decorator** | Thấp nhất |
+
+> 💡 **Ghi nhớ**: Parameter → Method → Accessor/Property → Class. Decorator áp dụng cho **Instance members** được thực thi trước **Static members**.
+
+```typescript
+function ClassDeco(constructor: Function) {
+  console.log('4. Class Decorator');
+}
+
+function MethodDeco(target: any, name: string, descriptor: PropertyDescriptor) {
+  console.log('2. Method Decorator');
+}
+
+function PropertyDeco(target: any, name: string) {
+  console.log('3. Property Decorator');
+}
+
+function ParamDeco(target: any, name: string, index: number) {
+  console.log('1. Parameter Decorator');
+}
+
+@ClassDeco
+class Example {
+  @PropertyDeco
+  title: string;
+
+  constructor(title: string) {
+    this.title = title;
+  }
+
+  @MethodDeco
+  greet(@ParamDeco message: string) {
+    console.log(message);
+  }
+}
+
+// Output thứ tự:
+// 3. Property Decorator
+// 1. Parameter Decorator
+// 2. Method Decorator
+// 4. Class Decorator
+```
+
+---
+
+### 10.6. Class Decorator (Decorator cho Class)
+
+- Class Decorator được khai báo **ngay trước khai báo class**.
+- Class Decorator được áp dụng lên **constructor** của class và có thể dùng để **theo dõi, sửa đổi hoặc thay thế** định nghĩa class.
+- Nhận **1 tham số**: constructor function của class.
+
+```typescript
+function Logger(constructor: Function) {
+  console.log('Logging...');
+  console.log(constructor);
+}
+
+@Logger
+class Person {
+  name = 'Max';
+
+  constructor() {
+    console.log('Creating person object...');
+  }
+}
+
+const person = new Person();
+// Output:
+// "Logging..."
+// [class Person]
+// "Creating person object..."
+```
+
+#### Class Decorator mở rộng class
+
+```typescript
+function WithTemplate(template: string, hookId: string) {
+  return function(constructor: any) {
+    const hookEl = document.getElementById(hookId);
+    const p = new constructor();
+    if (hookEl) {
+      hookEl.innerHTML = template;
+      hookEl.querySelector('h1')!.textContent = p.name;
+    }
+  };
+}
+
+@WithTemplate('<h1>My Person Object</h1>', 'app')
+class Person {
+  name = 'Max';
+
+  constructor() {
+    console.log('Creating person object...');
+  }
+}
+```
+
+---
+
+### 10.7. Decorator Factory (Nhà máy Decorator)
+
+- **Decorator Factory**: Là một hàm **trả về chính hàm decorator** (function that returns the decorator function).
+- Cho phép **truyền tham số** (arguments) vào decorator, giúp tùy chỉnh hành vi linh hoạt hơn.
+
+```typescript
+// Decorator Factory - hàm trả về decorator
+function Logger(logString: string) {
+  return function(constructor: Function) {
+    console.log(logString);
+    console.log(constructor);
+  };
+}
+
+// Sử dụng Decorator Factory - truyền tham số
+@Logger('LOGGING - PERSON')
+class Person {
+  name = 'Max';
+
+  constructor() {
+    console.log('Creating person object...');
+  }
+}
+
+// Output:
+// "LOGGING - PERSON"
+// [class Person]
+```
+
+```typescript
+// Ví dụ nâng cao: Decorator Factory với nhiều tham số
+function Component(config: { selector: string; template: string }) {
+  return function(constructor: Function) {
+    console.log(`Component registered: ${config.selector}`);
+    console.log(`Template: ${config.template}`);
+  };
+}
+
+@Component({
+  selector: 'app-person',
+  template: '<h1>Person Component</h1>'
+})
+class PersonComponent {
+  name = 'Max';
+}
+
+// Output:
+// "Component registered: app-person"
+// "Template: <h1>Person Component</h1>"
+```
+
+---
+
+### 10.8. Property Decorator (Decorator cho thuộc tính)
+
+- **Property Decorator**: Được áp dụng lên khai báo **thuộc tính** (property) của class.
+- Hàm Property Decorator được gọi với **2 tham số**:
+  1. **Target**: Constructor của class (cho static member) HOẶC prototype của class (cho instance member).
+  2. **Property Name**: Tên thuộc tính được trang trí.
+
+```typescript
+function Log(target: any, propertyName: string | Symbol) {
+  console.log('Property Decorator!');
+  console.log('Target:', target);
+  console.log('Property Name:', propertyName);
+}
+
+class Product {
+  @Log
+  title: string;
+
+  private _price: number;
+
+  constructor(t: string, p: number) {
+    this.title = t;
+    this._price = p;
+  }
+
+  getPriceWithTax(tax: number) {
+    return this._price * (1 + tax);
+  }
+}
+
+// Output (khi class được định nghĩa, KHÔNG cần tạo instance):
+// "Property Decorator!"
+// "Target:" { getPriceWithTax: [Function] }  (prototype)
+// "Property Name:" "title"
+```
+
+```typescript
+// Ví dụ ứng dụng: Required Property Decorator
+function Required(target: any, propertyName: string) {
+  // Logic kiểm tra thuộc tính bắt buộc tại đây
+  console.log(`Property '${propertyName}' is marked as required`);
+}
+
+class Employee {
+  @Required
+  employeeID!: number;
+
+  @Required
+  fullName!: string;
+}
+
+// Output:
+// "Property 'employeeID' is marked as required"
+// "Property 'fullName' is marked as required"
+```
+
+---
+
+### 10.9. Method Decorator (Decorator cho phương thức)
+
+- **Method Decorator**: Được áp dụng lên khai báo **phương thức** (method) của class.
+- Hàm Method Decorator được gọi với **3 tham số**:
+  1. **Target**: Constructor của class (cho static member) HOẶC prototype của class (cho instance member).
+  2. **propertyKey**: Tên của phương thức (method name).
+  3. **Descriptor**: Property Descriptor của phương thức (`PropertyDescriptor`).
+
+```typescript
+function Log(target: any, name: string, descriptor: PropertyDescriptor) {
+  console.log('Method Decorator!');
+  console.log('Target:', target);
+  console.log('Method Name:', name);
+  console.log('Descriptor:', descriptor);
+}
+
+class Product {
+  title: string;
+  private _price: number;
+
+  constructor(t: string, p: number) {
+    this.title = t;
+    this._price = p;
+  }
+
+  @Log
+  getPriceWithTax(tax: number) {
+    return this._price * (1 + tax);
+  }
+}
+
+// Output:
+// "Method Decorator!"
+// "Target:" { getPriceWithTax: [Function] }
+// "Method Name:" "getPriceWithTax"
+// "Descriptor:" { value: [Function], writable: true, enumerable: false, configurable: true }
+```
+
+```typescript
+// Ví dụ ứng dụng: Logging Method Decorator
+function LogExecutionTime(target: any, name: string, descriptor: PropertyDescriptor) {
+  const originalMethod = descriptor.value;
+
+  descriptor.value = function(...args: any[]) {
+    console.log(`Calling ${name} with args:`, args);
+    const start = performance.now();
+    const result = originalMethod.apply(this, args);
+    const end = performance.now();
+    console.log(`${name} took ${end - start}ms`);
+    return result;
+  };
+}
+
+class Calculator {
+  @LogExecutionTime
+  add(a: number, b: number): number {
+    return a + b;
+  }
+}
+
+const calc = new Calculator();
+calc.add(5, 10);
+// Output:
+// "Calling add with args: [5, 10]"
+// "add took 0.01ms"
+```
+
+---
+
+### 10.10. Accessor Decorator (Decorator cho Getter/Setter)
+
+- **Accessor Decorator**: Giống như Method Decorator nhưng được áp dụng lên **setter** hoặc **getter**.
+- ⚠️ TypeScript **không cho phép** tạo decorator cho cả getter và setter cùng lúc trên cùng một thuộc tính. Chỉ áp dụng decorator cho **cái nào khai báo trước** (thứ tự xuất hiện trong code).
+- Nhận **3 tham số** giống Method Decorator: `target`, `name`, `descriptor`.
+
+```typescript
+function Log(target: any, name: string, descriptor: PropertyDescriptor) {
+  console.log('Accessor Decorator!');
+  console.log('Target:', target);
+  console.log('Accessor Name:', name);
+  console.log('Descriptor:', descriptor);
+}
+
+class Product {
+  title: string;
+  private _price: number;
+
+  constructor(t: string, p: number) {
+    this.title = t;
+    this._price = p;
+  }
+
+  @Log // Decorator chỉ áp dụng cho setter HOẶC getter
+  set price(val: number) {
+    if (val > 0) {
+      this._price = val;
+    } else {
+      throw new Error('Invalid price - should be positive!');
+    }
+  }
+
+  get price() {
+    return this._price;
+  }
+}
+
+// Output:
+// "Accessor Decorator!"
+// "Target:" { price: [Getter/Setter] }
+// "Accessor Name:" "price"
+// "Descriptor:" { get: [Function], set: [Function], enumerable: false, configurable: true }
+```
+
+---
+
+### 10.11. Parameter Decorator (Decorator cho tham số)
+
+- **Parameter Decorator**: Được áp dụng lên khai báo **tham số của method** hoặc **tham số của constructor**.
+- Hàm Parameter Decorator được gọi với **3 tham số**:
+  1. **Target**: Constructor của class (cho static member) HOẶC prototype của class (cho instance member).
+  2. **Name**: Tên của phương thức chứa tham số được trang trí.
+  3. **Index**: Thứ tự (index) của tham số trong danh sách tham số của hàm cha (bắt đầu từ 0).
+- Parameter Decorator **chỉ dùng để kiểm tra sự tồn tại** của tham số trong hàm, và thường được **kết hợp** với Method Decorator hoặc Accessor Decorator.
+
+```typescript
+function Log(target: any, name: string, position: number) {
+  console.log('Parameter Decorator!');
+  console.log('Target:', target);
+  console.log('Method Name:', name);
+  console.log('Parameter Index:', position);
+}
+
+class Product {
+  title: string;
+  private _price: number;
+
+  constructor(t: string, p: number) {
+    this.title = t;
+    this._price = p;
+  }
+
+  getPriceWithTax(@Log tax: number) {
+    return this._price * (1 + tax);
+  }
+}
+
+// Output:
+// "Parameter Decorator!"
+// "Target:" { getPriceWithTax: [Function] }
+// "Method Name:" "getPriceWithTax"
+// "Parameter Index:" 0
+```
+
+```typescript
+// Ví dụ: Kết hợp Parameter Decorator và Method Decorator
+function Required(target: any, name: string, index: number) {
+  console.log(`Parameter at index ${index} in '${name}' is required`);
+}
+
+function Validate(target: any, name: string, descriptor: PropertyDescriptor) {
+  console.log(`Method '${name}' has validation applied`);
+}
+
+class UserService {
+  @Validate
+  createUser(@Required name: string, @Required email: string) {
+    console.log(`Creating user: ${name}, ${email}`);
+  }
+}
+
+// Output:
+// "Parameter at index 1 in 'createUser' is required"  (email — index 1)
+// "Parameter at index 0 in 'createUser' is required"  (name — index 0)
+// "Method 'createUser' has validation applied"
+```
+
+---
+
+### 10.12. Return Value in Decorator (Giá trị trả về trong Decorator)
+
+Decorator có thể **trả về giá trị** để thay thế hoặc mở rộng đối tượng được trang trí:
+
+- **Class Decorator**: Có thể trả về một **class mới** để thay thế class gốc.
+- **Method / Accessor Decorator**: Có thể trả về một **PropertyDescriptor mới** để thay đổi hành vi phương thức.
+- **Property / Parameter Decorator**: Giá trị trả về **bị bỏ qua** (ignored).
+
+```typescript
+// Class Decorator trả về class mới (mở rộng class gốc)
+function WithTimestamp<T extends { new (...args: any[]): {} }>(originalConstructor: T) {
+  return class extends originalConstructor {
+    createdAt = new Date();
+
+    constructor(...args: any[]) {
+      super(...args);
+      console.log('Timestamp added!');
+    }
+  };
+}
+
+@WithTimestamp
+class Person {
+  name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+}
+
+const p = new Person('Max');
+console.log((p as any).createdAt); // Output: Date object (thời điểm tạo)
+```
+
+```typescript
+// Method Decorator trả về PropertyDescriptor mới
+function Readonly(target: any, name: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+  return {
+    ...descriptor,
+    writable: false // Không cho phép ghi đè phương thức
+  };
+}
+
+class Report {
+  title: string;
+
+  constructor(t: string) {
+    this.title = t;
+  }
+
+  @Readonly
+  printReport() {
+    console.log('Report: ' + this.title);
+  }
+}
+
+const report = new Report('Annual');
+// report.printReport = () => {}; // ❌ Lỗi runtime: Cannot assign to read only property
+```
+
+---
+
+### 10.13. Autobind Decorator
+
+**Autobind Decorator**: Tự động bind `this` vào instance của class khi phương thức được truyền như callback, đảm bảo `this` luôn trỏ đúng đối tượng.
+
+#### Vấn đề khi không có Autobind
+
+```typescript
+class Printer {
+  message = 'This works!';
+
+  showMessage() {
+    console.log(this.message);
+  }
+}
+
+const printer = new Printer();
+
+const button = document.querySelector('button')!;
+button.addEventListener('click', printer.showMessage);
+// ❌ Output khi click: undefined (vì 'this' trỏ tới button, không phải printer)
+```
+
+#### Giải pháp: Autobind Decorator
+
+```typescript
+function Autobind(_: any, _2: string, descriptor: PropertyDescriptor): PropertyDescriptor {
+  const originalMethod = descriptor.value;
+
+  const adjustedDescriptor: PropertyDescriptor = {
+    configurable: true,
+    enumerable: false,
+    get() {
+      // 'this' ở đây trỏ tới object sở hữu method (instance), không phải event target
+      const boundFn = originalMethod.bind(this);
+      return boundFn;
+    }
+  };
+
+  return adjustedDescriptor;
+}
+
+class Printer {
+  message = 'This works!';
+
+  @Autobind
+  showMessage() {
+    console.log(this.message);
+  }
+}
+
+const printer = new Printer();
+
+const button = document.querySelector('button')!;
+button.addEventListener('click', printer.showMessage);
+// ✅ Output khi click: "This works!" (this luôn trỏ đúng đến printer)
+```
+
+> 💡 **Giải thích**: Autobind Decorator thay thế `value` trong PropertyDescriptor bằng một **getter**. Mỗi khi truy cập method, getter sẽ tự động `.bind(this)` để đảm bảo `this` luôn trỏ đúng instance, bất kể method được gọi ở đâu (event listener, setTimeout, callback,...).
+
+#### Tổng hợp các loại Decorator
+
+```
+                           [ DECORATORS ]
+                                 │
+     ┌───────────┬───────────┬───┴────┬──────────────┬──────────────┐
+     ▼           ▼           ▼        ▼              ▼              ▼
+  [ Class ]  [ Property ] [ Method ] [ Accessor ] [ Parameter ] [ Factory ]
+  1 tham số   2 tham số   3 tham số  3 tham số    3 tham số     Trả về
+ constructor  target,     target,    target,      target,       decorator
+              name        name,      name,        name,         function
+                          descriptor descriptor   index
+```
 
 
