@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="game-header">
+      <h1 class="game-title">Memory Game</h1>
+      <div class="stats-container">
+        <div class="stat-box">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="current-score">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Best Score</span>
+          <span class="stat-value" id="best-score">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="game-board-container">
+      <!-- Loader while fetching Pokemon data -->
+      <div id="loading" class="loading">Loading Pokémon...</div>
+      
+      <!-- The 4x4 Grid -->
+      <div id="game-board" class="game-board hidden">
+        <!-- Cards will be injected here by app.ts -->
+      </div>
+    </main>
+    
+    <!-- Win Message Overlay -->
+    <div id="win-message" class="win-message hidden">
+      <div class="win-content">
+        <h2>You Win! 🎉</h2>
+        <p>Total moves: <span id="final-score">0</span></p>
+        <button id="restart-btn" class="btn btn-primary">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
