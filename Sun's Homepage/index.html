@@ -23,16 +23,16 @@
 <body class="min-h-screen bg-white text-black ">
 
 
-<nav class="fixed top-0 w-full left-0 bg-white z-50 h-24 text-sm">
-  <div class="flex flex-row items-center mx-90 h-full">
+<nav class="fixed top-0 left-0 z-50 h-24 w-full bg-white text-sm max-md:h-16">
+  <div class="mx-90 flex h-full flex-row items-center max-md:mx-4">
 
-    <div class="flex items-center p-2 h-full md:w-[14.649%]">
+    <div class="flex h-full items-center p-2 md:w-[14.649%] max-md:p-0">
       <img src="https://sun-asterisk.vn/wp-content/uploads/2020/10/logo-sun@2x.png" alt="Logo Sun Asterisk"
-        class="h-8 " />
+        class="h-8 max-md:h-7" />
     </div>
 
-    <div class="ml-auto md:w-[72.68%] h-full">
-      <ul class="flex flex-row ml-auto justify-end items-center h-full">
+    <div class="ml-auto hidden h-full md:block md:w-[72.68%]">
+      <ul class="ml-auto flex h-full flex-row items-center justify-end">
         
           <li class="nav-item active relative mr-8 h-full flex justify-center items-center cursor-pointer text-red-600">
              <span class="nav-indicator absolute top-2 left-1/2 h-1.5 w-6 -translate-x-1/2 rounded-full bg-red-600"></span>
@@ -63,25 +63,34 @@
 
 
     
-    <div class=" md:w-[12.001%] flex justify-end items-center p-2 ">
-     <ul class="flex flex-row">
-       <li>
-        <a class="lang-item text-gray-400 px-[6px] cursor-pointer  ">VI</a>
-        
-       </li>
-       <li>
-          
-          <a class="lang-item active px-[13px] py-[1px] border rounded-sm border-red text-red-600 cursor-pointer">EN</a>
-       </li>  
-     </ul>
-
+    <div class="flex items-center justify-end p-2 md:w-[12.001%] max-md:ml-auto max-md:p-0">
+      <ul class="flex flex-row">
+        <li><a class="lang-item cursor-pointer px-[6px] text-gray-400">VI</a></li>
+        <li><a class="lang-item active cursor-pointer rounded-sm border border-red px-[13px] py-[1px] text-red-600">EN</a></li>
+      </ul>
     </div>
+
+    <details class="relative ml-3 md:hidden">
+      <summary class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-[#e8eaed] text-[#2c3544] [&::-webkit-details-marker]:hidden" aria-label="Open navigation">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </summary>
+      <ul class="absolute right-0 top-[52px] w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-[10px] border border-[#eceff2] bg-white py-2 shadow-[0_12px_30px_rgba(44,53,68,0.14)]">
+        <li class="nav-item active relative flex min-h-11 cursor-pointer items-center px-5 text-red-600"><span class="nav-indicator mr-3 h-2 w-2 rounded-full bg-red-600"></span>Home</li>
+        <li class="nav-item relative flex min-h-11 cursor-pointer items-center px-5"><span class="nav-indicator mr-3 hidden h-2 w-2 rounded-full bg-red-600"></span>About Us</li>
+        <li class="nav-item relative flex min-h-11 cursor-pointer items-center px-5"><span class="nav-indicator mr-3 hidden h-2 w-2 rounded-full bg-red-600"></span>Career</li>
+        <li class="nav-item relative flex min-h-11 cursor-pointer items-center px-5"><span class="nav-indicator mr-3 hidden h-2 w-2 rounded-full bg-red-600"></span>Environment</li>
+        <li class="nav-item relative flex min-h-11 cursor-pointer items-center px-5"><span class="nav-indicator mr-3 hidden h-2 w-2 rounded-full bg-red-600"></span>Projects</li>
+        <li class="nav-item relative flex min-h-11 cursor-pointer items-center px-5"><span class="nav-indicator mr-3 hidden h-2 w-2 rounded-full bg-red-600"></span>News</li>
+      </ul>
+    </details>
   </div>
 
 </nav>
 
-<div >
-  <video  src="https://sun-asterisk.vn/wp-content/uploads/2020/11/mv-pc.mp4" autoplay muted loop>
+<div class="max-md:mt-16 max-md:overflow-hidden">
+  <video class="block w-full max-md:aspect-video max-md:object-cover" src="https://sun-asterisk.vn/wp-content/uploads/2020/11/mv-pc.mp4" autoplay muted loop>
 </video></div>
   
 
@@ -91,20 +100,13 @@
   Our Business
 </h1>
 
-    <div class="w-full bg-white flex flex-row items-center border-[6px] px-[10px] rounded-2xl border-[#f9f9f9] border before:border-red before:border before:w-[110px] before:h-[calc(100%-80px)] before:content-[''] before:absolute before:-left-12 before:-z-10 before:rounded-2xl before:border-[#f9f9f9] before:border-[6px] text-base">
-      <div class="w-[42%] pl-[70px] py-10">
+    <div class="flex w-full flex-row items-center rounded-2xl border border-[6px] border-[#f9f9f9] bg-white px-[10px] text-base before:absolute before:-left-12 before:-z-10 before:h-[calc(100%-80px)] before:w-[110px] before:rounded-2xl before:border before:border-[6px] before:border-[#f9f9f9] before:content-[''] max-md:flex-col max-md:overflow-hidden max-md:px-0 max-md:before:hidden">
+      <div class="w-[42%] py-10 pl-[70px] max-md:w-full max-md:px-5 max-md:pb-3 max-md:pt-6">
        As a Digital Creative Studio, Sun* always prioritize the spirit of owning the products, thinking creatively in any project to bring the most "<strong>awesome</strong>" experience to end-users. With two service lines namely "<strong>Creative & Engineering</strong>" and "<strong>Talent Platform</strong>", Sun* has always been step by step with technology creating great value for society.
       </div>
-      <div class="relative min-w-0 flex-1 self-stretch">
+      <div class="relative min-w-0 flex-1 self-stretch max-md:h-[220px] max-md:w-full max-md:flex-none">
          <img
-      class="
-        absolute
-        right-[10px]
-        top-1/2
-        w-[538px]
-        max-w-none
-        -translate-y-1/2
-      "
+      class="absolute right-[10px] top-1/2 w-[538px] max-w-none -translate-y-1/2 max-md:static max-md:h-full max-md:w-full max-md:max-w-full max-md:translate-y-0 max-md:object-contain max-md:object-center"
       src="https://sun-asterisk.vn/wp-content/uploads/2020/11/intro-business.png"
       alt=""
     />
@@ -117,7 +119,7 @@
     <div class="relative z-20 mt-[84px] grid grid-cols-1 gap-[38px] pb-[50px] lg:grid-cols-2">
      
       <article
-        class="relative flex min-h-[438px] flex-col overflow-visible rounded-[16px] bg-[#c91116] px-[49px] pb-[49px] pt-[42px] text-white">
+        class="relative flex min-h-[438px] flex-col overflow-visible rounded-[16px] bg-[#c91116] px-[49px] pb-[49px] pt-[42px] text-white max-md:min-h-0 max-md:px-6 max-md:pb-6 max-md:pt-7">
         <span
           class="absolute -top-[32px] right-[51px] h-[66px] w-[66px] rounded-full bg-[#df292e]">
         </span>
@@ -138,7 +140,7 @@
         </p>
 
         <a href="#"
-          class="group relative mt-auto flex h-[80px] w-full items-center justify-center overflow-hidden rounded-[7px] bg-white text-[18px] font-bold text-[#c91116] transition-colors duration-500 before:absolute before:inset-0 before:origin-center before:scale-x-0  before:bg-[#2c3544] before:transition-transform before:duration-500 before:ease-out hover:text-white hover:before:scale-x-100">
+          class="group relative mt-auto flex h-[80px] w-full items-center justify-center overflow-hidden rounded-[7px] bg-white text-[18px] font-bold text-[#c91116] transition-colors duration-500 before:absolute before:inset-0 before:origin-center before:scale-x-0 before:bg-[#2c3544] before:transition-transform before:duration-500 before:ease-out hover:text-white hover:before:scale-x-100 max-md:mt-8 max-md:h-14">
           <span class="relative z-10">See more</span>
           <span class="relative z-10 ml-[13px] flex h-[24px] w-[24px] items-center justify-center rounded-full bg-[#fde8e8] transition-colors duration-500 group-hover:bg-[#46505e]">
             <svg class="h-[14px] w-[14px]" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -151,7 +153,7 @@
 
     
       <article
-        class="relative flex min-h-[438px] flex-col rounded-[16px] border border-[#d4d8de] bg-white px-[48px] pb-[48px] pt-[42px] text-[#252f3e]">
+        class="relative flex min-h-[438px] flex-col rounded-[16px] border border-[#d4d8de] bg-white px-[48px] pb-[48px] pt-[42px] text-[#252f3e] max-md:min-h-0 max-md:px-6 max-md:pb-6 max-md:pt-7">
         <div class="mb-[27px] flex items-center text-[14px] leading-[38px] text-[#7d8590]">
           <span class="absolute left-[28px] h-[39px] w-[39px] rounded-full bg-[#f4f4f4]"></span>
           <span class="relative">Digital Creative Studio</span>
@@ -168,7 +170,7 @@
         </p>
 
         <a href="#"
-          class="group relative mt-auto flex h-[80px] w-full items-center justify-center overflow-hidden rounded-[7px] bg-[#2c3544] text-[18px] font-bold text-white before:absolute before:inset-0 before:origin-center before:scale-x-0 before:bg-[#c91116] before:transition-transform before:duration-500 before:ease-out hover:before:scale-x-100">
+          class="group relative mt-auto flex h-[80px] w-full items-center justify-center overflow-hidden rounded-[7px] bg-[#2c3544] text-[18px] font-bold text-white before:absolute before:inset-0 before:origin-center before:scale-x-0 before:bg-[#c91116] before:transition-transform before:duration-500 before:ease-out hover:before:scale-x-100 max-md:mt-8 max-md:h-14">
           <span class="relative z-10">See more</span>
           <span class="relative z-10 ml-[13px] flex h-[24px] w-[24px] items-center justify-center rounded-full bg-[#46505e] transition-colors duration-500 group-hover:bg-[#df292e]">
             <svg class="h-[14px] w-[14px]" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -187,7 +189,7 @@
       </span>
     </div>
 
-    <section id="projects" class="relative pb-[82px] pt-[66px]">
+    <section id="projects" class="relative pb-[82px] pt-[66px] max-md:pb-14 max-md:pt-12">
       <span class="absolute left-[392px] top-[10px] hidden h-[28px] w-[28px] rounded-full bg-[#c91116] lg:block"></span>
       <span class="absolute -left-[1px] top-[128px] hidden h-[27px] w-[27px] rounded-full bg-[#fdebec] lg:block"></span>
       
@@ -195,22 +197,22 @@
       <div class="grid grid-cols-1 gap-[70px] lg:grid-cols-[56%_44%] lg:gap-0">
         
         <div class="project-counter-area">
-          <h2 class="mb-[83px] text-[40px] font-bold leading-none tracking-[-0.7px] text-[#252f3e]">Our Project</h2>
-          <div class="mb-[76px] flex items-center">
-            <span class="project-counter min-w-[222px] text-[112px] font-bold leading-[0.8] tracking-[-5px] text-[#c91116]" data-target="200">0</span>
+          <h2 class="mb-[83px] text-[40px] font-bold leading-none tracking-[-0.7px] text-[#252f3e] max-md:mb-10 max-md:text-[32px]">Our Project</h2>
+          <div class="mb-[76px] flex items-center max-md:mb-10">
+            <span class="project-counter min-w-[222px] text-[112px] font-bold leading-[0.8] tracking-[-5px] text-[#c91116] max-md:min-w-[145px] max-md:text-[76px] max-md:tracking-[-3px]" data-target="200">0</span>
             <div class="ml-[7px] pt-[4px]">
-              <span class="block text-[39px] font-bold leading-none text-[#c91116]">++</span>
-              <span class="mt-[31px] block text-[24px] leading-none text-[#3e4856]">Clients</span>
+              <span class="block text-[39px] font-bold leading-none text-[#c91116] max-md:text-[30px]">++</span>
+              <span class="mt-[31px] block text-[24px] leading-none text-[#3e4856] max-md:mt-5 max-md:text-[18px]">Clients</span>
             </div>
           </div>
-          <div class="mb-[93px] flex items-center">
-            <span class="project-counter min-w-[222px] text-[112px] font-bold leading-[0.8] tracking-[-5px] text-[#c91116]" data-target="300">0</span>
-            <div class="ml-[7px] pt-[4px]">
-              <span class="block text-[39px] font-bold leading-none text-[#c91116]">++</span>
-              <span class="mt-[31px] block whitespace-nowrap text-[24px] leading-none text-[#3e4856]">Supported Services</span>
+          <div class="mb-[93px] flex items-center max-md:mb-12">
+            <span class="project-counter min-w-[222px] text-[112px] font-bold leading-[0.8] tracking-[-5px] text-[#c91116] max-md:min-w-[145px] max-md:text-[76px] max-md:tracking-[-3px]" data-target="300">0</span>
+            <div class="ml-[7px] min-w-0 pt-[4px]">
+              <span class="block text-[39px] font-bold leading-none text-[#c91116] max-md:text-[30px]">++</span>
+              <span class="mt-[31px] block whitespace-nowrap text-[24px] leading-none text-[#3e4856] max-md:mt-5 max-md:whitespace-normal max-md:text-[18px]">Supported Services</span>
             </div>
           </div>
-          <a href="#" class="group relative flex h-[80px] w-full max-w-[421px] items-center justify-center overflow-hidden rounded-[3px] bg-[#2c3544] text-[18px] font-bold text-white before:absolute before:inset-0 before:origin-center before:scale-x-0 before:bg-[#c91116] before:transition-transform before:duration-500 hover:before:scale-x-100">
+          <a href="#" class="group relative flex h-[80px] w-full max-w-[421px] items-center justify-center overflow-hidden rounded-[3px] bg-[#2c3544] text-[18px] font-bold text-white before:absolute before:inset-0 before:origin-center before:scale-x-0 before:bg-[#c91116] before:transition-transform before:duration-500 hover:before:scale-x-100 max-md:h-14">
             <span class="relative z-10">See all projects</span>
             <span class="relative z-10 ml-[13px] flex h-[24px] w-[24px] items-center justify-center rounded-full bg-[#46505e]">
               <svg class="h-[14px] w-[14px]" viewBox="0 0 20 20" fill="none"><path d="M4 10h11M11 6l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -265,24 +267,24 @@
     </section>
 
     
-    <section id="career" class="relative mt-[32px] h-[608px] overflow-hidden rounded-[15px] text-center text-white">
+    <section id="career" class="relative mt-[32px] h-[608px] overflow-hidden rounded-[15px] text-center text-white max-md:h-auto max-md:px-5 max-md:py-10">
       <img class="absolute inset-0 h-full w-full object-cover"
         src="https://sun-asterisk.vn/wp-content/uploads/2020/11/career-bg.jpg" alt="">
       <div class="absolute inset-0 bg-[#c91116]/90"></div>
-      <span class="absolute left-[75px] top-[75px] h-[42px] w-[42px] rounded-full bg-[#fa4850]"></span>
-      <div class="relative z-10 mx-auto flex h-full max-w-[940px] flex-col items-center pt-[48px]">
-        <div class="flex h-[198px] w-[198px] flex-col items-center justify-center rounded-full bg-[#df2028]">
-          <span class="text-[17px]">Sun Asterisk</span>
-          <h2 class="mt-[15px] text-[56px] font-bold leading-none">Career</h2>
+      <span class="absolute left-[75px] top-[75px] h-[42px] w-[42px] rounded-full bg-[#fa4850] max-md:left-6 max-md:top-6 max-md:h-7 max-md:w-7"></span>
+      <div class="relative z-10 mx-auto flex h-full max-w-[940px] flex-col items-center pt-[48px] max-md:h-auto max-md:pt-0">
+        <div class="flex h-[198px] w-[198px] flex-col items-center justify-center rounded-full bg-[#df2028] max-md:h-[145px] max-md:w-[145px]">
+          <span class="text-[17px] max-md:text-[14px]">Sun Asterisk</span>
+          <h2 class="mt-[15px] text-[56px] font-bold leading-none max-md:mt-2 max-md:text-[42px]">Career</h2>
         </div>
-        <h3 class="mt-[61px] text-[31px] font-bold leading-tight">
+        <h3 class="mt-[61px] text-[31px] font-bold leading-tight max-md:mt-10 max-md:text-[24px]">
           Join us &amp; MAKE AWESOME THINGS THAT MATTER.
         </h3>
-        <p class="mt-[45px] text-[23px] leading-relaxed">
+        <p class="mt-[45px] text-[23px] leading-relaxed max-md:mt-6 max-md:text-[17px]">
           Sun* has always been looking for challenge-driven people to create "awesome" values.
         </p>
         <a href="#"
-          class="group relative mt-[51px] flex h-[80px] w-[407px] max-w-full items-center justify-center overflow-hidden rounded-[7px] bg-white text-[18px] font-bold text-[#c91116] transition-colors duration-500 before:absolute before:inset-0 before:origin-center before:scale-x-0 before:bg-[#2c3544] before:transition-transform before:duration-500 hover:text-white hover:before:scale-x-100">
+          class="group relative mt-[51px] flex h-[80px] w-[407px] max-w-full items-center justify-center overflow-hidden rounded-[7px] bg-white text-[18px] font-bold text-[#c91116] transition-colors duration-500 before:absolute before:inset-0 before:origin-center before:scale-x-0 before:bg-[#2c3544] before:transition-transform before:duration-500 hover:text-white hover:before:scale-x-100 max-md:mt-8 max-md:h-14">
           <span class="relative z-10">Join Sun*</span>
           <span class="relative z-10 ml-[13px] flex h-[24px] w-[24px] items-center justify-center rounded-full bg-[#fde8e8] transition-colors group-hover:bg-[#46505e]">
             <svg class="h-[14px] w-[14px]" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -294,7 +296,7 @@
     </section>
 
     
-    <section id="environment" class="pb-[92px] pt-[87px]">
+    <section id="environment" class="pb-[92px] pt-[87px] max-md:pb-14 max-md:pt-14">
       <h2 class="mb-[53px] text-[40px] font-bold leading-none tracking-[-0.7px] text-[#252f3e]">
         Working environment
       </h2>
@@ -344,10 +346,10 @@
     </section>
 
    
-    <section id="news" class="relative min-h-[670px] pb-[61px] pt-[46px]">
+    <section id="news" class="relative min-h-[670px] pb-[61px] pt-[46px] max-md:min-h-0 max-md:pb-14 max-md:pt-12">
       <h2 class="mb-[55px] text-[40px] font-bold leading-none tracking-[-0.7px] text-[#252f3e]">Culture - Event</h2>
       <span class="absolute -left-[62px] top-[237px] hidden h-[72px] w-[72px] rounded-full bg-[#fff0f1] xl:block"></span>
-      <article class="ml-[64px] w-[308px] max-w-full">
+      <article class="ml-[64px] w-[308px] max-w-full max-md:mx-auto max-md:w-full">
         <div class="relative">
           <img class="h-[173px] w-full rounded-[10px] object-cover"
             src="https://news.sun-asterisk.com/images/440x248/1f30a6d8-342c-4186-a9a0-d6190995cc81.png"
@@ -387,7 +389,7 @@
 
 
 <footer class="bg-[#f7f7f7] text-[#929dab]">
-  <div class="mx-auto grid min-h-[608px] max-w-[1170px] grid-cols-1 gap-x-[70px] gap-y-[64px] px-[25px] pb-[55px] pt-[83px] md:grid-cols-[195px_1fr_1fr_1fr]">
+  <div class="mx-auto grid min-h-[608px] max-w-[1170px] grid-cols-1 gap-x-[70px] gap-y-[64px] px-[25px] pb-[55px] pt-[83px] md:grid-cols-[195px_1fr_1fr_1fr] max-md:min-h-0 max-md:gap-y-10 max-md:pb-10 max-md:pt-12">
     <img class="h-auto w-[120px]" src="https://sun-asterisk.vn/wp-content/uploads/2020/10/logo-sun@2x.png" alt="Sun Asterisk">
     <div>
       <h3 class="relative mb-[31px] text-[17px] font-bold text-[#455162] before:absolute before:-left-[19px] before:-top-[7px] before:h-[38px] before:w-[38px] before:rounded-full before:bg-[#e9e9e9]"><span class="relative">Who are we?</span></h3>
@@ -431,7 +433,7 @@
   </div>
 </footer>
 
-<a href="#career" class="fixed bottom-[28px] right-[28px] z-50 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#c91116] text-[12px] font-bold text-white shadow-[0_0_0_9px_rgba(255,255,255,0.75)] transition-transform hover:scale-105">
+<a href="#career" class="fixed bottom-[28px] right-[28px] z-50 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#c91116] text-[12px] font-bold text-white shadow-[0_0_0_9px_rgba(255,255,255,0.75)] transition-transform hover:scale-105 max-md:hidden">
   Join us
 </a>
 <script src="main.js"></script>
