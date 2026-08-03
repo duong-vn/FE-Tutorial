@@ -2921,4 +2921,453 @@ button.addEventListener('click', printer.showMessage);
                           descriptor descriptor   index
 ```
 
+---
+
+## 11. Modules & Namespaces
+
+### 11.1. Modules trong TypeScript
+
+- **Khái niệm (Concept)**: 
+  - Trong TypeScript (và JavaScript hiện đại), mỗi file được coi là một **Module** độc lập nếu có chứa ít nhất một câu lệnh `export` hoặc `import`.
+  - Module giúp chia nhỏ ứng dụng thành các file dễ quản lý, tránh ô nhiễm phạm vi toàn cục (Global Scope).
+  - Code trong module có phạm vi riêng (File-based Scope), các biến/hàm/class bên trong chỉ có thể truy cập ở bên ngoài nếu được khai báo bằng từ khóa `export`.
+
+#### 11.1.1. Khai báo Module (Module Declaration)
+
+Để chia sẻ các phần tử (class, interface, function, variable) từ một file module, ta sử dụng từ khóa `export`.
+
+```typescript
+// FileName: addition.ts
+export class Addition {
+  constructor(private x?: number, private y?: number) {}
+
+  Sum() {
+    console.log("SUM: " + ((this.x ?? 0) + (this.y ?? 0)));
+  }
+}
+```
+
+#### 11.1.2. Truy cập Module (Module Access)
+
+Để sử dụng các phần tử từ module khác, ta dùng câu lệnh `import` kèm theo đường dẫn file tương đối.
+
+```typescript
+// FileName: app.ts
+import { Addition } from './addition';
+
+let addObject = new Addition(10, 20);
+addObject.Sum(); // Output: SUM: 30
+```
+
+---
+
+### 11.2. Re-export (Tái xuất bản Module)
+
+- **Re-exporting** là kỹ thuật xuất bản lại các phần tử (types, functions, classes) đã được export từ một module khác mà không cần phải giữ lại trong scope cục bộ của file hiện tại.
+- Thường được áp dụng trong mô hình **Barrel Pattern** (file `index.ts` trung gian) để gộp nhiều modules nhỏ và gom export lại một nơi duy nhất.
+
+```typescript
+// Re-export một thành phần cụ thể
+export { Addition } from './addition';
+
+// Re-export toàn bộ thành phần từ file khác
+export * from './subtraction';
+export * from './multiplication';
+```
+
+> 💡 **Lợi ích**: Giúp các file bên ngoài chỉ cần `import { Addition, Subtraction } from './math'` thay vì phải import từ từng file lẻ tẻ.
+
+---
+
+### 11.3. Namespaces (Không gian tên)
+
+- **Khái niệm**: 
+  - **Namespace** là một tính năng đặc thù của TypeScript (TypeScript-specific) được dùng để nhóm các hàm, interface, class và biến liên quan về mặt logic vào một tên gọi chung.
+  - Mục đích chính là ngăn ngừa xung đột tên (Name Collisions) trong Global Scope.
+  - Namespace có thể lồng nhau (Nested Namespaces).
+
+#### Khai báo Namespace (Declare Namespace)
+
+Để các thành phần trong Namespace có thể sử dụng được từ bên ngoài, ta **bắt buộc phải sử dụng từ khóa `export`** trước khai báo thành phần đó.
+
+```typescript
+// FileName: StoreCalc.ts
+namespace invoiceCalc {
+  export namespace invoiceAccount {
+    export class Invoice {
+      public calculateDiscount(price: number) {
+        return price * 0.01;
+      }
+    }
+  }
+}
+```
+
+---
+
+### 11.4. Sử dụng Namespaces (Using Namespaces & Triple-Slash Reference)
+
+- Để tham chiếu và sử dụng một Namespace được định nghĩa ở file `.ts` khác (mà không dùng hệ thống module ES6), TypeScript cung cấp cú pháp **Triple-Slash Directive**: `/// <reference path="..." />`.
+
+#### Cú pháp (Syntax)
+```typescript
+/// <reference path="path-to-file.ts" />
+```
+
+#### Ví dụ tham chiếu (Retrieve Namespace Example)
+
+```typescript
+// FileName: app.ts
+/// <reference path="./StoreCalc.ts" />
+
+let invoice = new invoiceCalc.invoiceAccount.Invoice();
+console.log("Output: " + invoice.calculateDiscount(400)); 
+// Output: Output: 4
+```
+
+---
+
+### 11.5. Biên dịch và Thực thi Namespace (Compile & Execute Namespace)
+
+- Mặc định trình duyệt không hiểu cú pháp `/// <reference path="..." />`. Vì vậy, khi thực thi ứng dụng gồm nhiều file chứa Namespace, ta cần biên dịch và gom tất cả các file mã nguồn `.ts` thành một file JavaScript duy nhất (`.js`).
+
+#### Cú pháp biên dịch gộp file với `--outFile`
+```bash
+tsc --outFile dist/bundle.js StoreCalc.ts app.ts
+```
+
+#### Hoặc cấu hình trong `tsconfig.json`:
+```json
+{
+  "compilerOptions": {
+    "module": "amd", // Hoặc "system" khi sử dụng --outFile
+    "outFile": "./dist/bundle.js"
+  }
+}
+```
+
+> ⚠️ **Lưu ý**: Tùy chọn `--outFile` chỉ hoạt động khi thuộc tính `"module"` trong `tsconfig.json` được thiết lập là `amd`, `system` hoặc khi không dùng ES Modules (`"module": "none"`).
+
+---
+
+### 11.6. So sánh chi tiết Namespace vs Modules
+
+| Tiêu chí | Module | Namespace |
+| :--- | :--- | :--- |
+| **Bản chất** | Chuẩn JavaScript ES6+ (ES Standard) | Tính năng tổ chức code riêng của TypeScript (TS-specific) |
+| **Tổ chức Code** | Chứa cả code và khai báo độc lập trong từng file | Nhóm các phần tử liên quan dưới một tên chung (Global/Nested) |
+| **Cách khai báo** | Dùng `export` để tạo hiển thị các module functions | Dùng từ khóa `namespace` và `export` các phần tử bên trong |
+| **Cách nạp / sử dụng** | Phải được `import` trước khi sử dụng ở nơi khác | Dùng cú pháp `/// <reference path="..." />` để tham chiếu |
+| **Lệnh biên dịch `tsc`** | Sử dụng cờ `--module` (CommonJS, ESNext, UMD,...) | Sử dụng cờ `--outFile` để gộp tất cả thành 1 file JavaScript |
+| **Truy cập phần tử** | Export tất cả thành 1 module và có thể truy cập bên ngoài | Phải export các hàm, class cụ thể thì bên ngoài namespace mới dùng được |
+| **Mục đích & Khuyên dùng** | **Ưu tiên sử dụng** trong các dự án hiện đại cùng Module Bundler (Webpack/Vite) | Chủ yếu dùng cho legacy code, viết file khai báo `.d.ts` hoặc dự án nhỏ không dùng bundler |
+
+---
+
+## 12. Webpack & Module Bundling
+
+### 12.1. Webpack là gì? (What is Webpack?)
+
+- **Webpack** là một công cụ đóng gói mã nguồn (**Module Bundler**) cho ứng dụng JavaScript/TypeScript.
+- Webpack phân tích cấu trúc dự án, xây dựng sơ đồ phụ thuộc (Dependency Graph) từ các file đầu vào, sau đó biên dịch và đóng gói tất cả tài nguyên (`.ts`, `.js`, `.css`, hình ảnh,...) thành một hoặc vài file Javascript tĩnh (bundle files) đã được tối ưu hóa cho trình duyệt.
+
+```
+┌─────────────────────────────────────────┐               ┌──────────────┐
+│  [ app.ts ] ──► [ addition.ts ]         │               │              │
+│     │                                   │ ──Webpack───► │  bundle.js   │
+│     └──► [ styles.css ]                 │               │              │
+└─────────────────────────────────────────┘               └──────────────┘
+          Cấu trúc tập tin dự án                            File nén đầu ra
+```
+
+### 12.2. Hướng dẫn Cài đặt Webpack với TypeScript
+
+Để thiết lập Webpack cho dự án TypeScript, thực hiện các bước sau:
+
+#### ❑ Bước 1: Cài đặt Webpack và Webpack CLI
+Cài đặt `webpack` và `webpack-cli` dưới dạng devDependencies:
+```bash
+npm install --save-dev webpack webpack-cli
+```
+
+#### ❑ Bước 2: Cài đặt `ts-loader`
+`ts-loader` là bộ nạp (loader) giúp Webpack hiểu và biên dịch trực tiếp các file TypeScript `.ts`:
+```bash
+npm install --save-dev ts-loader typescript
+```
+
+#### ❑ Bước 3: Chỉnh sửa `tsconfig.json`
+Cập nhật file cấu hình TypeScript để phù hợp với Webpack:
+```json
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES2015",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "noEmitOnError": true
+  }
+}
+```
+
+#### ❑ Bước 4: Tạo file `webpack.config.js`
+Tạo file `webpack.config.js` ở thư mục gốc của project để cấu hình quy trình đóng gói.
+
+---
+
+### 12.3. Cấu hình chi tiết `webpack.config.js`
+
+```javascript
+const path = require('path');
+
+module.exports = {
+  // 1. Chế độ đóng gói: 'development', 'production', hoặc 'none'
+  mode: 'development',
+
+  // 2. File đầu vào của ứng dụng (Entry point)
+  entry: './src/app.ts',
+
+  // 3. File đầu ra sau khi đóng gói (Output configuration)
+  output: {
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+    publicPath: '/dist/'
+  },
+
+  // 4. Cấu hình xử lý loại file bằng Loaders
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: 'ts-loader',
+        exclude: /node_modules/
+      }
+    ]
+  },
+
+  // 5. Cấu hình giải quyết tự động phần mở rộng file (Resolve extensions)
+  resolve: {
+    extensions: ['.ts', '.js']
+  },
+
+  // 6. Tạo source map để dễ dàng debug trên trình duyệt
+  devtool: 'inline-source-map'
+};
+```
+
+#### Giải thích các thuộc tính trong `webpack.config.js`:
+
+1. **`entry` (Input Configuration)**:
+   - Xác định file đầu vào để Webpack bắt đầu phân tích cây phụ thuộc (Dependency Graph).
+   - Nhận 3 dạng giá trị:
+     - **String**: `'./src/app.ts'` (Dành cho single-page app đơn giản).
+     - **Array**: `['./src/a.ts', './src/b.ts']` (Gộp nhiều file đầu vào).
+     - **Object**: `{ app: './src/app.ts', vendor: './src/vendor.ts' }` (Dành cho multi-page hoặc tách code).
+
+2. **`mode`**:
+   - `'development'`: Tối ưu tốc độ build, không nén code, giữ lại tên biến dễ đọc để hỗ trợ debugging.
+   - `'production'`: Tối ưu hóa dung lượng (Minification, Tree-shaking, Dead Code Elimination) để đạt hiệu năng tốt nhất trên môi trường thực tế.
+   - `'none'`: Tắt mọi tối ưu mặc định.
+
+3. **`output` (Output Configuration)**:
+   - Cấu hình vị trí và tên file kết quả thu được sau khi đóng gói.
+   - **Phân biệt `path` và `publicPath`**:
+     - `path`: Đường dẫn **vật lý tuyệt đối** trên ổ đĩa nơi chứa file `bundle.js` sau khi build (ví dụ `path.resolve(__dirname, 'dist')`).
+     - `publicPath`: Đường dẫn **tương đối URL** mà Web Server và trình duyệt dùng để truy cập/tải các tài nguyên tĩnh trong quá trình ứng dụng chạy (runtime).
+
+4. **`resolve`**:
+   - Cấu hình giúp Webpack nhận diện file khi dùng câu lệnh `import`.
+   - Thuộc tính `extensions: ['.ts', '.js']` quy định: nếu trong câu lệnh `import` không khai báo phần mở rộng file (ví dụ `import { Addition } from './addition'`), Webpack sẽ tự động tìm kiếm các file có đuôi `.ts` trước, sau đó đến `.js`.
+
+---
+
+## 13. Sử dụng Thư viện 3rd-Party, Class-Transformer & Class-Validator
+
+### 13.1. Thư viện JavaScript & TypeScript (Lodash Library)
+
+- **Lodash là gì?**: Lodash là một thư viện JavaScript mạnh mẽ và phổ biến chuyên dùng để thao tác và xử lý với mảng (`Array`), đối tượng (`Object`), hàm (`Function`), bộ sưu tập (`Collection`),...
+- **Ưu điểm của Lodash**:
+  - **Improved performance**: Tối ưu hóa hiệu năng xử lý dữ liệu.
+  - **Simple code & Easy to read**: Cung cấp các hàm tiện ích giúp viết code ngắn gọn, rõ ràng và dễ bảo trì.
+  - **Rộng rãi**: Tích hợp mượt mà với hầu hết các công nghệ JavaScript hiện nay như Node.js, ReactJS, VueJS, Angular,...
+
+#### Cài đặt Lodash trong TypeScript
+
+Trang chủ: [https://lodash.com](https://lodash.com)
+
+1. **Cài đặt thư viện Lodash**:
+   ```bash
+   npm install lodash
+   ```
+2. **Cài đặt Type Definitions cho TypeScript**:
+   ```bash
+   npm install --save-dev @types/lodash
+   ```
+   > 💡 **Lưu ý về `@types/`**: Rất nhiều thư viện JavaScript thuần (như Lodash) không được viết bằng TypeScript nên không chứa sẵn các file khai báo kiểu `.d.ts`. Để TypeScript không báo lỗi thiếu kiểu dữ liệu, ta cần cài thêm gói `@types/<library_name>` từ dự án DefinitelyTyped.
+
+---
+
+### 13.2. Khai báo Biến toàn cục JavaScript (Global Variables với `declare`)
+
+- Trong thực tế phát triển web, một số biến toàn cục (Global Variables) được tạo ra bên ngoài các file mã nguồn TypeScript (ví dụ được nhúng trực tiếp qua thẻ `<script>` trong file `index.html` hoặc từ các thư viện 3rd-party khác).
+- Nếu truy cập trực tiếp các biến này trong TypeScript, trình biên dịch `tsc` sẽ báo lỗi `Cannot find name 'GLOBAL'`.
+- **Giải pháp: Sử dụng từ khóa `declare`**: Cú pháp `declare` thông báo cho TypeScript compiler biết sự tồn tại của biến/hàm toàn cục ở môi trường runtime mà không yêu cầu TypeScript khởi tạo hay biên dịch lại biến đó.
+
+#### Ví dụ minh họa
+
+**File `index.html`**:
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Typescript and Webpack</title>
+  </head>
+  <body>
+    <script src="dist/index.bundle.js" defer></script>
+    <script src="dist/app.bundle.js" defer></script>
+    <script>
+      // Biến toàn cục GLOBAL được định nghĩa trực tiếp trên môi trường trình duyệt
+      var GLOBAL = 'LODASH';
+    </script>
+  </body>
+</html>
+```
+
+**File `app.ts`**:
+```typescript
+import _ from 'lodash';
+
+// Sử dụng thư viện Lodash (ví dụ hàm shuffle đảo ngẫu nhiên mảng)
+console.log(_.shuffle([1, 2, 3]));
+
+// Khai báo cho TypeScript nhận diện biến toàn cục GLOBAL
+declare var GLOBAL: any;
+
+console.log(GLOBAL);         // Output: "LODASH"
+GLOBAL = 'THIS IS SET';
+console.log(GLOBAL);         // Output: "THIS IS SET"
+```
+
+---
+
+### 13.3. Class-transformer (Chuyển đổi Object thành Class Instance)
+
+- **Khái niệm**: 
+  - Khi nhận dữ liệu từ backend hoặc API (thường dưới dạng JSON / Plain JavaScript Objects), các object này **không chứa các phương thức (methods)** của Class.
+  - Thư viện `class-transformer` giúp chuyển đổi dữ liệu dạng plain object (đối tượng thuần) thành một **instance thực sự của Class** (và ngược lại) để có thể gọi và sử dụng các method được định nghĩa trong Class đó.
+- **Yêu cầu cài đặt**:
+  ```bash
+  npm install class-transformer reflect-metadata
+  ```
+  *(Cần `import 'reflect-metadata';` ở đầu file ứng dụng)*
+
+#### Ví dụ minh họa
+
+**File `product.model.ts`**:
+```typescript
+export class Product {
+  title: string;
+  price: number;
+
+  constructor(t: string, p: number) {
+    this.title = t;
+    this.price = p;
+  }
+
+  getInformation() {
+    return [this.title, `$${this.price}`];
+  }
+}
+```
+
+**File `app.ts` (Sử dụng `class-transformer`)**:
+```typescript
+import 'reflect-metadata';
+import { plainToClass } from 'class-transformer';
+
+import { Product } from './product.model';
+
+// Dữ liệu plain objects giả lập nhận về từ API (chưa có method getInformation)
+const products = [
+  { title: 'A Carpet', price: 29.99 },
+  { title: 'A Book', price: 10.99 }
+];
+
+// Chuyển đổi mảng plain objects thành mảng các instance của class Product
+const loadedProducts = plainToClass(Product, products);
+
+// Giờ đây mỗi phần tử trong loadedProducts đã là instance của Product và có thể gọi getInformation()
+for (const prod of loadedProducts) {
+  console.log(prod.getInformation());
+}
+// Output:
+// [ 'A Carpet', '$29.99' ]
+// [ 'A Book', '$10.99' ]
+```
+
+> 💡 **Ghi chú**: Trong các phiên bản `class-transformer` mới hơn, hàm `plainToClass()` được đổi tên thành `plainToInstance()`. Cú pháp và chức năng hoàn toàn tương tự.
+
+---
+
+### 13.4. Class-validator (Xác thực dữ liệu dựa trên Class Decorators)
+
+- **Khái niệm**: 
+  - `class-validator` cho phép sử dụng các **Decorators** kiểm tra thuộc tính (như `@IsNotEmpty()`, `@IsNumber()`, `@IsPositive()`, `@IsEmail()`,...) trực tiếp trên các property của Class.
+  - Cho phép thực hiện xác thực (validation) đối tượng dựa trên các quy tắc decorator đã khai báo.
+- **Yêu cầu cài đặt**:
+  ```bash
+  npm install class-validator class-transformer reflect-metadata
+  ```
+
+#### Ví dụ minh họa
+
+**File `product.model.ts`**:
+```typescript
+import { IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
+
+export class Product {
+  @IsNotEmpty()
+  title: string;
+
+  @IsNumber()
+  @IsPositive()
+  price: number;
+
+  constructor(t: string, p: number) {
+    this.title = t;
+    this.price = p;
+  }
+
+  getInformation() {
+    return [this.title, `$${this.price}`];
+  }
+}
+```
+
+**File `app.ts` (Sử dụng `class-validator`)**:
+```typescript
+import 'reflect-metadata';
+import { plainToClass } from 'class-transformer';
+import { validate } from 'class-validator';
+
+import { Product } from './product.model';
+
+const products = [
+  { title: 'A Carpet', price: 29.99 },
+  { title: 'A Book', price: 10.99 }
+];
+
+// Khởi tạo một đối tượng Product vi phạm điều kiện (title rỗng, price âm)
+const newProd = new Product('', -5.99);
+
+// Tiến hành xác thực đối tượng newProd bằng hàm validate()
+validate(newProd).then(errors => {
+  if (errors.length > 0) {
+    console.log('VALIDATION ERRORS!');
+    console.log(errors); // In danh sách chi tiết các lỗi vi phạm validation
+  } else {
+    console.log(newProd.getInformation());
+  }
+});
+```
 
