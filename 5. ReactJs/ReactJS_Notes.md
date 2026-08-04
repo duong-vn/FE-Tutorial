@@ -490,4 +490,615 @@ function LikeItem(props) {
 }
 ```
 
+---
+
+# Chương 4: Styling in React
+
+## 1. Displaying Some Vowels
+
+- Để hiển thị các ký tự (ví dụ: nguyên âm), bạn chỉ cần khai báo các Component như sau:
+
+```jsx
+ReactDOM.render(
+  <div>
+    <Letter>A</Letter>
+    <Letter>E</Letter>
+    <Letter>I</Letter>
+    <Letter>O</Letter>
+    <Letter>U</Letter>
+  </div>,
+  document.getElementById('container')
+);
+```
+
+- Giao diện ban đầu sẽ trông khá đơn điệu vì chưa có style. Các bước tiếp theo sẽ làm cho nó trông hấp dẫn hơn bằng cách áp dụng CSS.
+
+---
+
+## 2. Styling React Content Using CSS (Dùng CSS thuần)
+
+- Styling bằng CSS trong React thực ra **đơn giản** như bạn nghĩ.
+- Vì React cuối cùng vẫn sinh ra các thẻ HTML thông thường (regular HTML tags), nên **tất cả các kỹ thuật CSS bạn đã biết** để style HTML vẫn áp dụng hoàn toàn được.
+- Chỉ cần ghi nhớ một vài điểm nhỏ khác biệt so với HTML/CSS thuần (ví dụ: dùng `className` thay `class`).
+
+---
+
+## 3. Understand the Generated HTML
+
+- Phương thức render cha (parent render method) là phương thức dựa trên `ReactDOM` và giao diện được bọc trong một thẻ `<div>` cha, bên trong chứa nhiều component `<Letter>`.
+
+**Cấu trúc HTML được sinh ra:**
+```html
+<div id="container">
+  <div>
+    <div class="letter">A</div>
+    <div class="letter">E</div>
+    <div class="letter">I</div>
+    <div class="letter">O</div>
+    <div class="letter">U</div>
+  </div>
+</div>
+```
+
+**Áp dụng class CSS:**
+- Cần hiểu cấu trúc HTML được sinh ra, sau đó thêm `className="letter"` vào thẻ `<div>` bên trong mỗi component `Letter`:
+
+```jsx
+function Letter(props) {
+  return (
+    <div className="letter">
+      {props.children}
+    </div>
+  );
+}
+```
+
+- Sau đó, trong file CSS, định nghĩa style cho class `.letter`:
+
+```css
+.letter {
+  padding: 10px;
+  margin: 10px;
+  background-color: #ffde00;
+  color: #333;
+  display: inline-block;
+  font-family: monospace;
+  font-size: 32px;
+  border-radius: 5px;
+}
+```
+
+---
+
+## 4. Styling Content the React Way (Inline Styles)
+
+- React **khuyến khích** sử dụng **inline styles (kiểu nội tuyến)** để định nghĩa style thay vì dựa hoàn toàn vào file CSS riêng biệt.
+- Mục tiêu là biến mỗi Component thành một **"black box"** hoàn chỉnh — tự chứa toàn bộ thông tin về giao diện và hành vi.
+- Điều này giúp các component trở nên **dễ tái sử dụng hơn**, vì style đi kèm với component, không phụ thuộc file CSS ngoài.
+
+---
+
+## 5. Creating a Style Object (Tạo đối tượng Style)
+
+- Trong React, để dùng **inline style**, ta truyền vào một **đối tượng JavaScript (Style Object)** thay vì chuỗi CSS.
+- Công thức chuyển đổi thuộc tính CSS sang JavaScript:
+
+| CSS Property | JavaScript (camelCase) |
+| :--- | :--- |
+| `padding` | `padding` *(không đổi - single word)* |
+| `margin` | `margin` *(không đổi - single word)* |
+| `color` | `color` *(không đổi - single word)* |
+| `background-color` | `backgroundColor` |
+| `font-family` | `fontFamily` |
+| `border-radius` | `borderRadius` |
+
+**Quy tắc chuyển đổi:**
+1. **Thuộc tính CSS 1 từ** (như `padding`, `margin`, `color`): **giữ nguyên**.
+2. **Thuộc tính CSS nhiều từ** có dấu gạch nối (như `background-color`, `font-family`, `border-radius`): **chuyển sang camelCase** — xóa dấu `-` và viết hoa chữ cái đầu của từ tiếp theo.
+
+---
+
+## 6. Actually Styling Our Content
+
+- Để truyền màu nền động cho Component, thêm thuộc tính `bgcolor` khi gọi component trong `ReactDOM.render()`:
+
+```jsx
+ReactDOM.render(
+  <div>
+    <Letter bgcolor="#58B3FF">A</Letter>
+    <Letter bgcolor="#FF605F">E</Letter>
+    <Letter bgcolor="#FFD52E">I</Letter>
+    <Letter bgcolor="#49DD8E">O</Letter>
+    <Letter bgcolor="#AE99FF">U</Letter>
+  </div>,
+  document.getElementById('container')
+);
+```
+
+- Bên trong Component `Letter`, tạo **Style Object** và sử dụng `props.bgcolor` để gán giá trị cho `backgroundColor`:
+
+```jsx
+function Letter(props) {
+  const letterStyle = {
+    padding: 10,
+    margin: 10,
+    backgroundColor: props.bgcolor,
+    color: '#333',
+    display: 'inline-block',
+    fontFamily: 'monospace',
+    fontSize: 32,
+    borderRadius: 5,
+  };
+
+  return (
+    <div style={letterStyle}>
+      {props.children}
+    </div>
+  );
+}
+```
+
+> [!TIP]
+> **Tóm tắt 2 cách Styling trong React:**
+>
+> | Phương pháp | Cú pháp | Ưu điểm |
+> | :--- | :--- | :--- |
+> | **CSS thuần (External/Internal CSS)** | `className="letter"` + file `.css` | Quen thuộc, dễ dùng với class có sẵn |
+> | **Inline Style (Style Object)** | `style={{ backgroundColor: props.bgcolor }}` | Tái sử dụng cao, style đóng gói trong component |
+
+---
+
+# Chương 5: State & Event
+
+## 1. ReactJS States
+
+### 1.1 Properties vs States trong ReactJS
+
+| Tiêu chí | Properties (Props) | State |
+| :--- | :--- | :--- |
+| **Khai báo khi nào** | Khi tạo (khởi tạo) component từ bên ngoài | Khai báo bên trong định nghĩa của component |
+| **Ai kiểm soát** | Component cha truyền vào | Bản thân component tự quản lý |
+| **Có thay đổi được không** | ❌ Immutable (chỉ đọc) | ✅ Mutable (thay đổi được thông qua setter) |
+| **Mục đích** | Truyền dữ liệu từ cha xuống con | Lưu trữ trạng thái nội bộ của component |
+
+---
+
+### 1.2 Adding a State Variable (Thêm biến State)
+
+- Để thêm biến state, import `useState` từ React ở đầu file:
+
+```jsx
+import { useState } from 'react';
+```
+
+- Cú pháp khai báo state:
+
+```jsx
+const [index, setIndex] = useState(0);
+```
+
+> [!NOTE]
+> **Cú pháp `[index, setIndex]`** được gọi là **Array Destructuring (Giải cấu trúc mảng)** — cho phép đọc giá trị từ mảng một cách ngắn gọn.
+> `useState` luôn trả về một mảng có **đúng 2 phần tử**: `[giá_trị_hiện_tại, hàm_cập_nhật]`.
+
+- Ví dụ sử dụng trong hàm xử lý sự kiện:
+
+```jsx
+function handleClick() {
+  setIndex(index + 1);
+}
+```
+
+---
+
+### 1.3 Render and Commit (Quy trình Render)
+
+React xử lý việc cập nhật giao diện qua 3 bước, hãy hình dung như mô hình nhà hàng:
+
+| Bước | Mô tả | Ví dụ ẩm thực |
+| :---: | :--- | :--- |
+| **1. Triggering a render** | Kích hoạt render (do state/props thay đổi) | Thực khách gọi món → phục vụ ghi order |
+| **2. Rendering the component** | React gọi lại function component để tính toán JSX mới | Đầu bếp chuẩn bị món ăn trong bếp |
+| **3. Committing to the DOM** | React cập nhật Real DOM với những thay đổi cần thiết | Phục vụ mang món ra và đặt lên bàn |
+
+---
+
+### 1.4 State as a Snapshot (State như một Bản chụp)
+
+- Mỗi lần React re-render một component:
+  1. React gọi lại function component của bạn.
+  2. Function trả về một **JSX snapshot** (bản chụp giao diện) mới.
+  3. React cập nhật màn hình để khớp với snapshot đó.
+
+- Khi React gọi component, nó cung cấp một **snapshot của state** tại thời điểm render đó. Component trả về JSX với props, event handlers và giá trị state — tất cả đều được tính toán dựa trên giá trị state của lần render đó.
+
+---
+
+### 1.5 Queueing a Series of State Updates (Hàng đợi cập nhật State)
+
+- React **chờ** cho đến khi toàn bộ code trong event handler đã chạy xong trước khi xử lý các cập nhật state.
+- Tương tự như phục vụ nhà hàng không chạy vào bếp ngay khi bạn gọi món đầu tiên, mà chờ bạn gọi hết rồi mới ghi order đầy đủ.
+
+**Cập nhật cùng một state nhiều lần trước lần render tiếp theo:**
+
+Sử dụng **updater function** (hàm cập nhật) `n => n + 1`:
+
+```jsx
+setNumber(n => n + 1); // React thêm vào hàng đợi
+setNumber(n => n + 1); // React thêm vào hàng đợi
+setNumber(n => n + 1); // React thêm vào hàng đợi
+```
+
+**Quy trình React xử lý hàng đợi:**
+1. `setNumber(n => n + 1)`: Thêm `n => n + 1` vào hàng đợi.
+2. `setNumber(n => n + 1)`: Thêm `n => n + 1` vào hàng đợi.
+3. `setNumber(n => n + 1)`: Thêm `n => n + 1` vào hàng đợi.
+4. Tại lần render tiếp theo, React duyệt qua hàng đợi và trả về **giá trị cuối cùng đã được cập nhật đầy đủ**.
+
+---
+
+### 1.6 Updating Objects in State (Cập nhật Object trong State)
+
+- State có thể lưu bất kỳ giá trị JavaScript nào, **bao gồm cả Object**.
+- **Không nên** thay đổi object đang lưu trong state trực tiếp (**mutate**).
+- Thay vào đó, hãy **tạo object mới** (hoặc sao chép object cũ) rồi gán vào state.
+
+```jsx
+// ❌ Sai - mutate trực tiếp
+person.firstName = e.target.value;
+
+// ✅ Đúng - tạo object mới thay thế
+setPerson({
+  firstName: e.target.value, // Giá trị mới từ input
+  lastName: person.lastName,
+  email: person.email,
+});
+```
+
+- Dùng **Spread Operator (`...`)** để sao chép các field cũ và chỉ ghi đè field cần thay đổi:
+
+```jsx
+setPerson({
+  ...person,              // Sao chép tất cả field cũ
+  firstName: e.target.value, // Chỉ ghi đè field này
+});
+```
+
+---
+
+### 1.7 Updating Arrays in State (Cập nhật Array trong State)
+
+- Array trong JavaScript là **mutable**, nhưng khi lưu trong React State, bạn phải xử lý chúng như **immutable**.
+- Tương tự Object: khi muốn cập nhật array, hãy **tạo array mới** (hoặc sao chép array cũ) rồi set state:
+
+```jsx
+// ❌ Sai - mutate trực tiếp
+items.push(newItem);
+
+// ✅ Đúng - tạo array mới
+setItems([...items, newItem]);
+
+// ✅ Đúng - lọc phần tử
+setItems(items.filter(item => item.id !== targetId));
+
+// ✅ Đúng - map để cập nhật phần tử
+setItems(items.map(item =>
+  item.id === targetId ? { ...item, done: true } : item
+));
+```
+
+---
+
+## 2. Event Ecosystem
+
+### 2.1 Events (Sự kiện trong React)
+
+- Các **event handler** (hàm xử lý sự kiện) sẽ nhận các instance của **SyntheticEvent** — một lớp wrapper (bao bọc) cross-browser xung quanh native event của trình duyệt.
+- `SyntheticEvent` có cùng interface với native event của trình duyệt, bao gồm `stopPropagation()` và `preventDefault()`, nhưng hoạt động **đồng nhất trên mọi trình duyệt**.
+
+**Form Events:**
+- `onChange`, `onInput`, `onSubmit`
+- *Tham khảo thêm về `onChange`: [https://facebook.github.io/react/docs/forms.html](https://facebook.github.io/react/docs/forms.html)*
+
+**Mouse Events:**
+- `onClick`, `onContextMenu`, `onDoubleClick`, `onDrag`, `onDragEnd`
+- `onDragEnter`, `onDragExit`, `onDragLeave`, `onDragOver`, `onDragStart`
+- `onDrop`, `onMouseDown`, `onMouseEnter`, `onMouseLeave`
+- `onMouseMove`, `onMouseOut`, `onMouseOver`, `onMouseUp`
+
+---
+
+### 2.2 SyntheticEvent
+
+- Giống như ReactJS bọc DOM vào Virtual DOM, ReactJS cũng bọc DOM event vào **SyntheticEvent** để đảm bảo tương thích đồng đều giữa các trình duyệt.
+
+**Danh sách thuộc tính và phương thức của SyntheticEvent:**
+
+| STT | Thuộc tính / Phương thức | Kiểu | Mô tả |
+| :--: | :--- | :--- | :--- |
+| 1 | `bubbles` | `boolean` | Sự kiện có nổi bọt (bubble) không |
+| 2 | `cancelable` | `boolean` | Sự kiện có thể bị huỷ không |
+| 3 | `currentTarget` | `DOMEventTarget` | Phần tử đang xử lý sự kiện |
+| 4 | `defaultPrevented` | `boolean` | Hành vi mặc định có bị ngăn không |
+| 5 | `eventPhase` | `number` | Giai đoạn của sự kiện |
+| 6 | `isTrusted` | `boolean` | Sự kiện có phát sinh từ người dùng thật không |
+| 7 | `nativeEvent` | `DOMEvent` | Đối tượng event gốc của trình duyệt |
+| 8 | `preventDefault()` | `void` | Ngăn hành vi mặc định |
+| 9 | `isDefaultPrevented()` | `boolean` | Kiểm tra hành vi mặc định có bị ngăn không |
+| 10 | `stopPropagation()` | `void` | Dừng lan truyền sự kiện |
+| 11 | `isPropagationStopped()` | `boolean` | Kiểm tra lan truyền có bị dừng không |
+| 12 | `target` | `DOMEventTarget` | Phần tử phát sinh sự kiện |
+| 13 | `timeStamp` | `number` | Thời điểm sự kiện xảy ra |
+| 14 | `type` | `string` | Loại sự kiện (click, change,...) |
+
+---
+
+### 2.3 Event Pooling (Gom Pool sự kiện)
+
+- Hệ thống SyntheticEvent trong React sử dụng kỹ thuật **Event Pooling** (tái sử dụng đối tượng event).
+- **Nghĩa là:** Đối tượng `SyntheticEvent` sẽ được **tái sử dụng** và toàn bộ thuộc tính sẽ bị **nullified (đặt về null)** sau khi callback event đã được gọi xong.
+- **Lý do:** Tối ưu hiệu năng (performance).
+- **Hệ quả:** Không thể truy cập event theo cách **bất đồng bộ (asynchronous)**.
+
+```jsx
+// ❌ Sai - không truy cập được event trong async
+function handleClick(event) {
+  setTimeout(() => {
+    console.log(event.target.value); // null! event đã bị pool
+  }, 1000);
+}
+
+// ✅ Đúng - dùng event.persist() để giữ event khỏi pool
+function handleClick(event) {
+  event.persist(); // Lấy event ra khỏi pool
+  setTimeout(() => {
+    console.log(event.target.value); // Hoạt động!
+  }, 1000);
+}
+```
+
+---
+
+### 2.4 Handler Events (Xử lý sự kiện — Controlled Component)
+
+**Luồng xử lý sự kiện trong React (theo sơ đồ):**
+
+```text
+  +--------+    1. Input     +--------+    2. Events    +-------+
+  |  User  | ------------->  |  View  | --------------> | State |
+  +--------+                 +--------+                 +-------+
+      ^                                                     |
+      |                                                     | 3. event.target.value
+      |                   4. Changed view                   |
+      +-----------------------------------------------------+
+                     value = {this.state.value}
+```
+
+**Ví dụ Controlled Form Input (Component điều khiển):**
+
+```jsx
+const { useState } = React;
+
+function App() {
+  const [input, setInput] = useState('');
+
+  function formUpdate(event) {
+    setInput(event.target.value);
+  }
+
+  return (
+    <div className="form-group container">
+      <label>Controlled Form Input</label>
+      <input
+        type="text"
+        className="form-control"
+        aria-describedby="emailHelp"
+        placeholder="Update input here"
+        value={input}
+        onChange={formUpdate}
+      />
+      <large className="form-text text-muted">{input}</large>
+    </div>
+  );
+}
+
+const destination = document.querySelector("#container");
+ReactDOM.render(<App />, destination);
+```
+
+> [!TIP]
+> **Controlled Component** là pattern trong React, trong đó giá trị của một phần tử form (input, select, textarea) được kiểm soát hoàn toàn bởi **React State**. Mọi thay đổi từ người dùng đều đi qua `onChange` → cập nhật state → React re-render với giá trị mới.
+
+---
+
+# Chương 6: Side Effects
+
+## 1. Side Effects & useEffect Hook
+
+### 1.0 Synchronizing with Effects (Đồng bộ hóa với Effects)
+
+- Một số component cần **đồng bộ hóa với các hệ thống bên ngoài** (external systems), ví dụ:
+  - Điều khiển một component không thuộc React dựa theo React State.
+  - Thiết lập kết nối tới server.
+  - Gửi log phân tích khi component xuất hiện trên màn hình.
+- **Effects** cho phép bạn chạy một đoạn code **sau khi render** để đồng bộ component với hệ thống bên ngoài React.
+
+---
+
+### 1.1 How to write an Effect (Cách viết Effect)
+
+Để viết một Effect, tuân theo **3 bước**:
+
+| Bước | Mô tả |
+| :---: | :--- |
+| **1. Declare an Effect** | Khai báo Effect. Mặc định, Effect sẽ chạy sau **mỗi lần commit** (sau mỗi lần render). |
+| **2. Specify dependencies** | Chỉ định dependencies (phụ thuộc). Hầu hết Effects chỉ nên chạy lại khi cần thiết, không phải sau mỗi lần render. |
+| **3. Add cleanup** | Thêm hàm cleanup nếu cần. Một số Effects cần dọn dẹp sau khi xong (ví dụ: `connect` → `disconnect`, `subscribe` → `unsubscribe`). |
+
+---
+
+### 1.2 Declare an Effect (Khai báo Effect)
+
+- Import hook `useEffect` từ React:
+
+```jsx
+import { useEffect } from 'react';
+```
+
+- Gọi `useEffect` ở **top level** của component và đặt code bên trong:
+
+```jsx
+function MyComponent() {
+  useEffect(() => {
+    // Code ở đây sẽ chạy sau *mỗi lần* render
+  });
+
+  return <div />;
+}
+```
+
+---
+
+### 1.3 Specify the Effect Dependencies (Chỉ định Dependencies)
+
+- Mặc định, Effects chạy sau **mọi lần render**. Điều này thường không mong muốn vì:
+  - **Chậm:** Đồng bộ với hệ thống bên ngoài không phải lúc nào cũng tức thì (ví dụ: không muốn reconnect chat server mỗi lần gõ phím).
+  - **Sai:** Một số hiệu ứng chỉ nên chạy một lần (ví dụ: animation fade-in chỉ nên chạy khi component xuất hiện lần đầu).
+
+**Cách bỏ qua re-run không cần thiết** bằng cách truyền **mảng dependencies** làm tham số thứ 2:
+
+```jsx
+// Chỉ chạy 1 lần khi component mount (mảng rỗng)
+useEffect(() => {
+  // ...
+}, []);
+
+// Chỉ chạy lại khi isPlaying thay đổi
+useEffect(() => {
+  if (isPlaying) {
+    // ...
+  } else {
+    // ...
+  }
+}, [isPlaying]); // isPlaying phải được khai báo trong dependencies!
+```
+
+> [!IMPORTANT]
+> **Quy tắc dependencies:**
+> - `useEffect(() => {...})` — **Không có mảng**: chạy sau **mỗi lần** render.
+> - `useEffect(() => {...}, [])` — **Mảng rỗng**: chỉ chạy **1 lần** khi component mount.
+> - `useEffect(() => {...}, [dep1, dep2])` — **Có dependencies**: chạy lại khi **bất kỳ dependency nào thay đổi**.
+
+---
+
+### 1.4 Cleanup Function (Hàm dọn dẹp)
+
+- Nếu Effect **subscribe** (đăng ký) vào một thứ gì đó, hàm cleanup phải **unsubscribe** (huỷ đăng ký):
+
+```jsx
+useEffect(() => {
+  function handleScroll(e) {
+    console.log(window.scrollX, window.scrollY);
+  }
+
+  window.addEventListener('scroll', handleScroll);
+
+  // Cleanup: gỡ bỏ event listener khi component unmount
+  return () => window.removeEventListener('scroll', handleScroll);
+}, []);
+```
+
+**Cách React xử lý cleanup (trong môi trường Development):**
+1. Effect gọi `addEventListener()`.
+2. React **ngay lập tức** gọi cleanup → `removeEventListener()`.
+3. React gọi `addEventListener()` lần nữa với cùng handler.
+4. Kết quả: tại mọi thời điểm chỉ có **1 subscription duy nhất** đang hoạt động — giống với môi trường Production.
+
+**Các cặp Effect — Cleanup thường gặp:**
+
+| Effect | Cleanup |
+| :--- | :--- |
+| `connect()` | `disconnect()` |
+| `subscribe()` | `unsubscribe()` |
+| `addEventListener()` | `removeEventListener()` |
+| `fetch()` | `cancel()` hoặc `ignore result` |
+| `setTimeout()` | `clearTimeout()` |
+| `setInterval()` | `clearInterval()` |
+
+---
+
+## 2. Other ES (ECMAScript) Versions in React
+
+### 2.1 ECMAScript (ES) là gì?
+
+- **ECMAScript (ES)** là một đặc tả (specification) ngôn ngữ scripting được chuẩn hóa bởi **Ecma International** theo tiêu chuẩn **ECMA-262** và **ISO/IEC 16262**.
+- Được tạo ra để **chuẩn hóa JavaScript**, nhằm hỗ trợ nhiều cài đặt độc lập (independent implementations) của ngôn ngữ này trên các nền tảng và môi trường khác nhau.
+
+---
+
+### 2.2 Các tính năng nổi bật của ES6 (ECMAScript 2015)
+
+ES6 là phiên bản quan trọng nhất và được sử dụng rộng rãi nhất trong hệ sinh thái React:
+
+| STT | Tính năng ES6 | Mô tả ngắn |
+| :---: | :--- | :--- |
+| 1 | **Block-Scoped: `let` và `const`** | Khai báo biến có phạm vi block (thay thế `var`). `const` cho hằng số, `let` cho biến thay đổi được. |
+| 2 | **Arrow Function (`=>`)** | Hàm mũi tên, cú pháp ngắn gọn hơn, không có `this` riêng (kế thừa `this` từ ngữ cảnh cha). |
+| 3 | **Rest Parameter (`...args`)** | Gom các tham số còn lại vào một mảng. |
+| 4 | **Destructuring Assignment** | Giải cấu trúc — gán giá trị từ Object/Array vào biến một cách ngắn gọn. |
+| 5 | **Default Parameters** | Tham số mặc định cho hàm khi không truyền vào. |
+| 6 | **Template Literals** | Chuỗi template với backtick `` ` `` hỗ trợ nhúng biểu thức `${expression}` và xuống dòng trực tiếp. |
+| 7 | **Multi-line String** | Chuỗi nhiều dòng (thực hiện thông qua Template Literals). |
+| 8 | **Enhanced Object Literals** | Cú pháp object ngắn gọn hơn: shorthand properties, method shorthand, computed properties. |
+| 9 | **Promises** | Quản lý code bất đồng bộ (async), thay thế callback hell. |
+| 10 | **Classes** | Cú pháp lớp (class) theo hướng OOP rõ ràng hơn (dựa trên prototype của JS). |
+
+**Ví dụ nhanh một số tính năng ES6 thường dùng trong React:**
+
+```js
+// 1. let & const
+const PI = 3.14;
+let count = 0;
+
+// 2. Arrow Function
+const greet = (name) => `Hello, ${name}!`;
+
+// 3. Rest Parameter
+function sum(...numbers) {
+  return numbers.reduce((a, b) => a + b, 0);
+}
+
+// 4. Destructuring Assignment
+const { name, age } = person;
+const [first, second] = array;
+
+// 5. Default Parameters
+function createUser(name = 'Anonymous', role = 'viewer') {
+  return { name, role };
+}
+
+// 6. Template Literals
+const message = `Welcome, ${name}! You have ${count} notifications.`;
+
+// 8. Enhanced Object Literals
+const x = 1, y = 2;
+const point = { x, y }; // Shorthand: { x: x, y: y }
+
+// 9. Promises
+fetch('/api/data')
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
+
+// 10. Classes (dùng trong Class Components của React)
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+  speak() {
+    return `${this.name} makes a sound.`;
+  }
+}
+```
+
 
