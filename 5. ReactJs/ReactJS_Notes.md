@@ -1101,4 +1101,505 @@ class Animal {
 }
 ```
 
+---
+
+# Chương 7: React Forms
+
+## Giới thiệu (Introduction)
+
+- Các phần tử form HTML (`<input>`, `<textarea>`, `<select>`) hoạt động **khác một chút** so với các phần tử DOM thông thường trong React.
+- Lý do: các phần tử form theo bản chất HTML đã **tự lưu trữ và quản lý state nội bộ** của chúng (ví dụ: `<input>` tự nhớ giá trị người dùng đang gõ).
+- Trong React, chúng ta thường muốn **kiểm soát hoàn toàn** giá trị của form thông qua React State — đây gọi là **Controlled Component**.
+
+---
+
+## 1. Controlled Components
+
+- **Trong HTML:** Các phần tử form như `<input>`, `<textarea>`, `<select>` tự quản lý state nội bộ và cập nhật dựa trên input của người dùng.
+- **Trong React:** State có thể thay đổi (mutable state) thường được lưu trong **`state`** của component và chỉ được cập nhật thông qua hàm **`setState()`** (hoặc `useState` setter trong functional component).
+
+**Nguyên tắc của Controlled Component:**
+- Giá trị của phần tử form (`value`) được gán từ **React State**.
+- Mỗi khi người dùng thay đổi input, `onChange` event sẽ được gọi → cập nhật state → React re-render với giá trị mới.
+
+```jsx
+import { useState } from 'react';
+
+function NameForm() {
+  const [name, setName] = useState('');
+
+  function handleChange(e) {
+    setName(e.target.value);
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    alert('Tên đã nộp: ' + name);
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <label>
+        Tên:
+        <input type="text" value={name} onChange={handleChange} />
+      </label>
+      <button type="submit">Nộp</button>
+    </form>
+  );
+}
+```
+
+---
+
+## 2. The `<textarea>` Tag
+
+| | HTML Thuần | React (Controlled) |
+| :--- | :--- | :--- |
+| **Cách định nghĩa nội dung** | Qua **children** (nội dung bên trong thẻ) | Qua thuộc tính **`value`** |
+| **Ví dụ** | `<textarea>Nội dung ở đây</textarea>` | `<textarea value={text} onChange={...} />` |
+
+```jsx
+// HTML thuần
+<textarea>Đây là nội dung mặc định</textarea>
+
+// React - dùng value attribute
+function EssayForm() {
+  const [essay, setEssay] = useState('Viết nội dung tại đây...');
+
+  return (
+    <form>
+      <label>
+        Bài luận:
+        <textarea value={essay} onChange={(e) => setEssay(e.target.value)} />
+      </label>
+    </form>
+  );
+}
+```
+
+> [!NOTE]
+> Nhờ dùng `value` attribute, `<textarea>` trong React được viết rất tương đồng với `<input type="text">` — giúp nhất quán trong code.
+
+---
+
+## 3. The `<select>` Tag
+
+- **Trong HTML:** Dùng thuộc tính `selected` trên `<option>` để đánh dấu lựa chọn mặc định.
+- **Trong React:** Dùng thuộc tính **`value`** trên thẻ `<select>` gốc để xác định option đang được chọn.
+
+```jsx
+// HTML thuần - dùng "selected" trên option
+<select>
+  <option value="grapefruit">Bưởi</option>
+  <option value="lime">Chanh</option>
+  <option selected value="coconut">Dừa</option>
+  <option value="mango">Xoài</option>
+</select>
+
+// React - dùng "value" trên thẻ select
+function FlavorForm() {
+  const [flavor, setFlavor] = useState('coconut');
+
+  return (
+    <form>
+      <label>
+        Chọn hương vị:
+        <select value={flavor} onChange={(e) => setFlavor(e.target.value)}>
+          <option value="grapefruit">Bưởi</option>
+          <option value="lime">Chanh</option>
+          <option value="coconut">Dừa</option>
+          <option value="mango">Xoài</option>
+        </select>
+      </label>
+    </form>
+  );
+}
+```
+
+> [!TIP]
+> **Điểm mạnh của React approach:** Chỉ cần cập nhật `value` ở **một chỗ duy nhất** (trên thẻ `<select>`), không cần lùng tìm và thay đổi thuộc tính `selected` trên từng `<option>`.
+>
+> **Kết luận:** `<input type="text">`, `<textarea>`, và `<select>` đều hoạt động tương tự nhau trong React — tất cả đều nhận thuộc tính `value` để implement **Controlled Component**.
+
+---
+
+## 4. The `<input type="file">` Tag
+
+- **Trong HTML:** `<input type="file">` cho phép người dùng chọn một hoặc nhiều file từ thiết bị để upload lên server hoặc xử lý bằng JavaScript qua **File API**.
+- **Đặc điểm trong React:** Vì giá trị của `<input type="file">` là **read-only** (chỉ có thể được set bởi người dùng, không thể set bằng code), nên nó là một **Uncontrolled Component** trong React.
+
+```jsx
+// File input - Uncontrolled Component
+function FileUploadForm() {
+  const fileInputRef = useRef(null);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const file = fileInputRef.current.files[0];
+    console.log('File được chọn:', file.name);
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input type="file" ref={fileInputRef} />
+      <button type="submit">Upload</button>
+    </form>
+  );
+}
+```
+
+---
+
+## 5. Controlled Input Null Value
+
+- Nếu chỉ định thuộc tính `value` trên một Controlled Component, người dùng **sẽ không thể thay đổi** input trừ khi bạn muốn.
+- Nếu `value` đã được chỉ định nhưng input vẫn có thể chỉnh sửa được, có thể bạn đã vô tình set `value` thành `undefined` hoặc `null`.
+
+```jsx
+// Input bị khóa (locked)
+<input value="Cố định" onChange={...} />
+
+// Input bị khóa lúc đầu, sau đó trở thành editable
+// (Do value bị set thành null sau 1 giây)
+function LockedInput() {
+  const [val, setVal] = useState("Khóa");
+
+  useEffect(() => {
+    setTimeout(() => setVal(null), 1000); // Sau 1s, input trở thành editable
+  }, []);
+
+  return <input value={val} onChange={(e) => setVal(e.target.value)} />;
+}
+```
+
+> [!WARNING]
+> Nếu gán `value={null}` hoặc `value={undefined}` cho một controlled input, React sẽ chuyển nó thành **uncontrolled** và input sẽ trở nên editable. Đây là nguyên nhân phổ biến gây ra lỗi `Warning: A component is changing a controlled input to be uncontrolled`.
+
+---
+
+## 6. Form Action
+
+- Trình duyệt hỗ trợ built-in `<form>` component cho phép tạo các điều khiển tương tác để gửi thông tin:
+
+```jsx
+function SearchForm() {
+  function search(formData) {
+    const query = formData.get('query');
+    console.log('Tìm kiếm:', query);
+  }
+
+  return (
+    <form action={search}>
+      <input name="query" placeholder="Tìm kiếm..." />
+      <button type="submit">Search</button>
+    </form>
+  );
+}
+```
+
+---
+
+## 7. Handling Multiple Submission Types
+
+- Khi người dùng nhấn vào một nút cụ thể, form được submit và **action tương ứng** của nút đó sẽ được thực thi.
+- Ví dụ: một form có thể có nhiều nút với các action khác nhau:
+
+```jsx
+function ArticleForm() {
+  function publishAction(formData) {
+    console.log('Xuất bản bài viết:', formData.get('title'));
+  }
+
+  function saveDraftAction(formData) {
+    console.log('Lưu nháp:', formData.get('title'));
+  }
+
+  return (
+    <form action={publishAction}>
+      <input name="title" placeholder="Tiêu đề bài viết" />
+
+      {/* Nút submit mặc định - dùng action của form (publish) */}
+      <button type="submit">Xuất bản</button>
+
+      {/* Nút với formAction riêng - dùng action của nút này (save draft) */}
+      <button type="submit" formAction={saveDraftAction}>
+        Lưu nháp
+      </button>
+    </form>
+  );
+}
+```
+
+---
+
+## 8. Other (Những lưu ý khác)
+
+### Alternatives to Controlled Components (Uncontrolled Components)
+
+- Đôi khi dùng Controlled Components **khá tẻ nhạt**, vì phải viết event handler cho mọi thay đổi dữ liệu và pipe toàn bộ input state qua React component.
+- Đặc biệt phiền phức khi:
+  - Chuyển đổi codebase cũ sang React.
+  - Tích hợp React với thư viện non-React.
+- **Giải pháp thay thế:** Sử dụng **Uncontrolled Components** — kỹ thuật tham chiếu DOM trực tiếp bằng `useRef()` thay vì dùng state.
+
+### Fully-Fledged Solutions (Giải pháp Form hoàn chỉnh)
+
+- Nếu cần giải pháp **form đầy đủ tính năng** bao gồm:
+  - ✅ Validation (kiểm tra hợp lệ)
+  - ✅ Theo dõi các field đã được người dùng truy cập (visited fields)
+  - ✅ Xử lý form submission
+- Có thể sử dụng thư viện như **[Formik](https://formik.org/)** — một trong những thư viện form phổ biến nhất trong React.
+- Tuy nhiên, Formik vẫn được xây dựng dựa trên các nguyên tắc của **Controlled Components** và **State Management** — vì vậy hãy học vững nền tảng trước.
+
+> [!TIP]
+> **Tóm tắt các loại form element trong React:**
+>
+> | Phần tử | Cách set giá trị trong React | Controlled? |
+> | :--- | :--- | :---: |
+> | `<input type="text">` | `value={state}` + `onChange` | ✅ |
+> | `<textarea>` | `value={state}` + `onChange` | ✅ |
+> | `<select>` | `value={state}` + `onChange` | ✅ |
+> | `<input type="file">` | Read-only, chỉ người dùng set được | ❌ (Uncontrolled) |
+
+---
+
+# Chương 8: Lists and Keys
+
+## 1. Rendering Multiple Components (Hiển thị nhiều Components)
+Bạn có thể xây dựng các bộ sưu tập (collections) gồm nhiều phần tử và chèn chúng vào JSX bằng cách sử dụng cặp dấu ngoặc nhọn `{}`. 
+Trong JavaScript, chúng ta thường sử dụng hàm `map()` của mảng để lặp qua dữ liệu và trả về các React elements.
+
+Ví dụ: Lặp qua mảng `numbers` bằng `map()` và trả về một thẻ `<li>` cho mỗi số.
+```jsx
+const numbers = [1, 2, 3, 4, 5];
+const listItems = numbers.map((number) =>
+  <li>{number}</li>
+);
+
+// Sau đó render listItems bên trong thẻ ul
+ReactDOM.render(
+  <ul>{listItems}</ul>,
+  document.getElementById('root')
+);
+```
+
+## 2. Basic List Component
+Thông thường, bạn sẽ render danh sách bên trong một Component thay vì xử lý trực tiếp ngoài global.
+
+```jsx
+function NumberList(props) {
+  const numbers = props.numbers;
+  // Cần thêm thuộc tính 'key' cho mỗi thẻ li khi lặp
+  const listItems = numbers.map((number) =>
+    <li key={number.toString()}>
+      {number}
+    </li>
+  );
+  return (
+    <ul>{listItems}</ul>
+  );
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById('root')
+);
+```
+
+## 3. Keys (Khóa)
+- **Mục đích:** Keys giúp React xác định các mục (items) nào đã thay đổi (changed), được thêm vào (added), hoặc bị xóa đi (removed) khỏi danh sách.
+- **Tính ổn định:** Keys cần được cấp cho các phần tử bên trong mảng để tạo cho chúng một danh tính ổn định (stable identity).
+- **Cách chọn Key:** Cách tốt nhất để chọn key là sử dụng một chuỗi (string) giúp xác định duy nhất mục danh sách đó so với các anh chị em (siblings) của nó.
+- Thông thường nhất, bạn sẽ sử dụng **ID** từ dữ liệu (data) của bạn làm key.
+
+Ví dụ:
+```jsx
+const todoItems = todos.map((todo) =>
+  <li key={todo.id}>
+    {todo.text}
+  </li>
+);
+```
+
+> [!WARNING]
+> Không nên sử dụng `index` của mảng làm `key` nếu thứ tự của các item có thể thay đổi. Việc này có thể ảnh hưởng tiêu cực đến hiệu suất (performance) và có thể gây ra lỗi với component state.
+
+## 4. Extracting Components with Keys (Tách Components chứa Keys)
+- **Quy tắc quan trọng:** Keys chỉ có ý nghĩa trong bối cảnh của **mảng bao quanh nó** (surrounding array).
+- Nếu bạn trích xuất (extract) một component con (ví dụ: `ListItem`), bạn nên đặt thuộc tính `key` trên thẻ `<ListItem />` khi gọi nó trong mảng (hàm `map()`), chứ không phải đặt bên trong định nghĩa của `ListItem` (ví dụ trên thẻ `<li>` bên trong nó).
+
+**Cách đúng (Correct Key Usage):**
+```jsx
+function ListItem(props) {
+  // Đúng! Không cần thiết lập thuộc tính key ở đây:
+  return <li>{props.value}</li>;
+}
+
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) =>
+    // Đúng! Key cần được thiết lập ở đây (bên trong mảng của hàm map):
+    <ListItem key={number.toString()} value={number} />
+  );
+  return (
+    <ul>
+      {listItems}
+    </ul>
+  );
+}
+```
+
+## 5. Embedding map() in JSX (Nhúng map() trực tiếp vào JSX)
+- Trong các ví dụ trên, chúng ta đã khai báo một biến `listItems` riêng biệt và sau đó chèn nó vào JSX.
+- Tuy nhiên, JSX cho phép **nhúng bất kỳ biểu thức nào** (expression) bên trong dấu ngoặc nhọn `{}`, vì vậy chúng ta có thể gọi hàm `map()` trực tiếp (inline) bên trong JSX.
+
+Ví dụ nhúng trực tiếp `map()`:
+```jsx
+function NumberList(props) {
+  const numbers = props.numbers;
+  return (
+    <ul>
+      {numbers.map((number) =>
+        <ListItem key={number.toString()} value={number} />
+      )}
+    </ul>
+  );
+}
+```
+> [!TIP]
+> Việc nhúng `map()` trực tiếp đôi khi dẫn đến code gọn gàng hơn. Tùy thuộc vào quyết định của bạn xem cách nào dễ đọc hơn. Nếu khối lệnh `map()` quá phức tạp hoặc lồng nhau sâu, có thể đã đến lúc cần phải trích xuất nội dung bên trong thành một component riêng biệt.
+
+---
+
+# Chương 9: Creating Complex Components
+
+## 1. From Visuals to Components (Từ thiết kế trực quan đến Components)
+Trong thực tế, những gì bạn được yêu cầu triển khai trong React sẽ không bao giờ đơn giản như một danh sách các cái tên hay những khối màu cơ bản. Thay vào đó, bạn sẽ nhận được một bản thiết kế trực quan (visual) của một giao diện người dùng phức tạp, chẳng hạn như bản nháp (scribble), sơ đồ (diagram), ảnh chụp màn hình (screenshot), video, redline, hoặc comp (bản mockup). Nhiệm vụ của bạn là mang những pixel tĩnh đó vào đời thực (bring static pixels to life) thông qua code.
+
+### 1.1 Identifying the Major Visual Elements (Xác định các yếu tố trực quan chính)
+Giả sử nhiệm vụ là tái tạo lại một Component dạng Card (Thẻ hiển thị mã màu). Quá trình này bao gồm hai bước:
+1. **Xác định các yếu tố trực quan chính (Identify the major visual elements).**
+2. **Quyết định các Components sẽ là gì (Figure out what the components will be).**
+
+Nhìn vào bản thiết kế của thẻ hiển thị mã màu (Card), chúng ta có thể thấy hai vùng riêng biệt:
+- Vùng phía trên (Top region) là một hình vuông hiển thị một màu sắc cụ thể.
+- Vùng phía dưới (Bottom region) là một khu vực màu trắng hiển thị giá trị mã màu Hex.
+
+### 1.2 Identifying the Components (Xác định các Components)
+Chúng ta cần xác định yếu tố trực quan nào sẽ được chuyển đổi thành một component, và yếu tố nào không. **Không phải mọi yếu tố trực quan đều cần phải trở thành component**, và chúng ta cũng không muốn chỉ tạo ra một vài component quá khổng lồ và phức tạp.
+
+- **Thẻ (Card)** và **Hình vuông màu (Colored square)** rất phù hợp để làm component riêng biệt. 
+  - `Card` hoạt động như một container (khung chứa) bên ngoài.
+  - `Square` chỉ đơn giản là hiển thị một màu sắc.
+- Vậy còn nhãn chữ (Label) và vùng màu trắng bao quanh nó thì sao?
+  - Trong trường hợp này, vùng màu trắng hình chữ nhật sẽ không được tách thành một component riêng mà sẽ được gộp chung với thẻ.
+  - Tại bước này, chúng ta đã xác định được **3 components** và phân cấp (hierarchy) của chúng: `Card` chứa `Square` và `Label`.
+
+---
+
+## 2. Creating the Components (Tạo các Components)
+Tên gọi cho các components của chúng ta sẽ là: **Card**, **Label**, và **Square**. Chúng ta có thể bắt đầu bằng việc khởi tạo cấu trúc khung (skeleton) cho chúng:
+
+```jsx
+import React from 'react';
+
+// Component: Square
+const Square = () => {
+  return (
+    <br />
+  );
+};
+
+// Component: Label
+const Label = () => {
+  return (
+    <br />
+  );
+};
+
+// Component: Card
+const Card = () => {
+  return (
+    <br />
+  );
+};
+```
+
+---
+
+## 3. The Card Component (Component Card)
+Component này sẽ đóng vai trò là container (khung chứa), nơi mà các component `Square` và `Label` sẽ nằm bên trong.
+
+```jsx
+function Card() {
+  const cardStyle = {
+    height: 200,
+    width: 150,
+    padding: 0,
+    backgroundColor: "#FFF",
+    WebkitFilter: "drop-shadow(0px 0px 5px #666)",
+    filter: "drop-shadow(0px 0px 5px #666)"
+  };
+  
+  return (
+    <div style={cardStyle}>
+      {/* Các component con sẽ được render ở đây */}
+    </div>
+  );
+}
+
+// Render Card ra màn hình
+ReactDOM.render(
+  <div style={{ display: "flex", gap: "20px" }}>
+    <Card />
+  </div>,
+  document.querySelector("#container")
+);
+```
+
+---
+
+## 4. The Square Component (Component Hình Vuông Màu)
+Giống như component Card, chúng ta trả về một thẻ `div` có thuộc tính `style` được thiết lập bằng một đối tượng JavaScript định nghĩa vẻ bề ngoài của component này.
+
+```jsx
+function Square() {
+  const squareStyle = {
+    height: 150,
+    backgroundColor: "#FF6663"
+  };
+  
+  return (
+    <div style={squareStyle}></div>
+  );
+}
+```
+
+---
+
+## 5. The Label Component (Component Nhãn Text)
+Component cuối cùng còn lại là `Label`. Chúng ta sẽ thêm các thuộc tính CSS vào `labelStyle` để tạo kiểu cho đoạn văn bản hiển thị mã màu hex:
+
+```jsx
+function Label() {
+  const labelStyle = {
+    fontFamily: "sans-serif",
+    fontWeight: "bold",
+    padding: "13px 0 0 0",
+    margin: 0,
+    textAlign: "center",
+    color: "#333"
+  };
+  
+  return (
+    <p style={labelStyle}>#FF6663</p>
+  );
+}
+```
+
+*(Lưu ý: Để hoàn thiện cấu trúc, bạn sẽ cần nhúng `<Square />` và `<Label />` vào bên trong câu lệnh `return` của `Card` component).*
+
+
+
 
