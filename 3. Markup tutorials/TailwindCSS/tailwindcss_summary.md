@@ -1,292 +1,84 @@
 # Tổng hợp kiến thức Tailwind CSS
 
----
-
-## 1. Tailwind CSS là gì?
-
-Tailwind CSS là một **framework CSS theo hướng utility-first** (ưu tiên các lớp tiện ích).
-
-- Cung cấp các **lớp CSS cấp thấp** (ví dụ: `text-center`, `bg-blue-500`, `font-bold`).
-- Cho phép xây dựng giao diện tùy chỉnh **trực tiếp trong HTML** mà không cần viết CSS riêng từ đầu.
-- Rất phù hợp cho việc **tạo mẫu nhanh** (rapid prototyping) và xây dựng **hệ thống thiết kế có khả năng mở rộng** (scalable design systems).
-- Tập trung vào tính **kết hợp** (composability) và **tốc độ** phát triển.
-
----
-
-## 2. Lợi ích chính
-
-| Lợi ích | Mô tả |
-|---|---|
-| **Phát triển nhanh hơn** | Không cần viết CSS tùy chỉnh cho từng component |
-| **Tùy chỉnh cao** | File `tailwind.config.js` cho phép dễ dàng thiết lập theme và mở rộng |
-| **Thiết kế đáp ứng (Responsive)** | Hệ thống breakpoint mobile-first tích hợp sẵn |
-| **Không lo đặt tên** | Tránh được xung đột tên class trong CSS |
-| **Kích thước bundle nhỏ** | Tự động loại bỏ CSS không sử dụng khi build production |
-| **Không phụ thuộc framework** | Hoạt động với React, Vue, Angular và nhiều framework khác |
-
----
-
-## 3. Cách hoạt động & Ví dụ
-
-- Sử dụng các **lớp tiện ích đã định nghĩa sẵn** trực tiếp trong HTML.
-- **Kết hợp** nhiều lớp để tạo kiểu cho phần tử.
-- Tailwind **sinh CSS trong quá trình build**.
-- Tùy chỉnh thông qua file `tailwind.config.js`.
-
-**Ví dụ:**
-
+## 1. Khái niệm
+Tailwind CSS là framework **utility-first**: ghép các class nhỏ trực tiếp trong HTML thay vì viết CSS cho từng component.
 ```html
-<button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-  Click me
+<button class="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
+  Lưu
 </button>
 ```
+Ưu điểm: phát triển nhanh, responsive/state nhất quán, purge CSS không dùng khi build. Đổi lại HTML dài và cần quy ước component.
 
-**Giải thích từng class:**
-
-| Class | Chức năng |
-|---|---|
-| `bg-blue-500` | Màu nền xanh dương (cường độ 500) |
-| `hover:bg-blue-700` | Màu nền xanh đậm hơn khi hover |
-| `text-white` | Màu chữ trắng |
-| `font-bold` | Độ đậm chữ: bold |
-| `py-2` | Padding trên & dưới (vertical) |
-| `px-4` | Padding trái & phải (horizontal) |
-| `rounded` | Bo tròn góc (border-radius) |
-
----
-
-## 4. Các lớp tiện ích cốt lõi
-
-### 4.1. Layout (Bố cục)
-
-| Nhóm | Các class | Mô tả |
-|---|---|---|
-| Container | `container` | Giới hạn chiều rộng theo breakpoint |
-| Display | `block`, `inline-block`, `flex`, `grid`, `hidden` | Kiểu hiển thị phần tử |
-| Position | `static`, `relative`, `absolute`, `fixed`, `sticky` | Kiểu định vị phần tử |
-| Z-Index | `z-10`, `z-20`, `z-30`, `z-40`, `z-50` | Thứ tự xếp chồng |
-
-### 4.2. Spacing (Khoảng cách)
-
-**Margin (lề ngoài):**
-
-| Prefix | Mô tả |
-|---|---|
-| `m-{size}` | Margin tất cả các hướng |
-| `mx-{size}` | Margin trái & phải |
-| `my-{size}` | Margin trên & dưới |
-| `mt-`, `mr-`, `mb-`, `ml-` | Margin từng hướng riêng (trên, phải, dưới, trái) |
-
-**Padding (lề trong):**
-
-| Prefix | Mô tả |
-|---|---|
-| `p-{size}` | Padding tất cả các hướng |
-| `px-{size}` | Padding trái & phải |
-| `py-{size}` | Padding trên & dưới |
-| `pt-`, `pr-`, `pb-`, `pl-` | Padding từng hướng riêng |
-
-**Khoảng cách giữa các phần tử con:**
-
-| Prefix | Mô tả |
-|---|---|
-| `space-x-{size}` | Khoảng cách ngang giữa các phần tử con |
-| `space-y-{size}` | Khoảng cách dọc giữa các phần tử con |
-
-### 4.3. Sizing (Kích thước)
-
-| Nhóm | Các class | Mô tả |
-|---|---|---|
-| Width | `w-{size}`, `min-w-{size}`, `max-w-{size}` | Chiều rộng, chiều rộng tối thiểu, chiều rộng tối đa |
-| Height | `h-{size}`, `min-h-{size}`, `max-h-{size}` | Chiều cao, chiều cao tối thiểu, chiều cao tối đa |
-
----
-
-## 5. Typography (Kiểu chữ)
-
-| Thuộc tính | Các class | Mô tả |
-|---|---|---|
-| Font Family | `font-sans`, `font-serif`, `font-mono` | Họ phông chữ |
-| Font Size | `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`, ... | Kích thước chữ |
-| Font Weight | `font-thin`, `font-light`, `font-normal`, `font-medium`, `font-bold`, `font-extrabold` | Độ đậm chữ |
-| Text Alignment | `text-left`, `text-center`, `text-right`, `text-justify` | Căn chỉnh văn bản |
-| Text Color | `text-gray-700`, `text-red-500`, `text-blue-600`, ... | Màu chữ |
-| Text Decoration | `underline`, `line-through`, `no-underline` | Trang trí văn bản (gạch chân, gạch ngang) |
-
----
-
-## 6. Thiết kế đáp ứng (Responsive Design)
-
-Sử dụng các **tiền tố responsive** để áp dụng kiểu dáng tại các breakpoint khác nhau. Tailwind CSS sử dụng cách tiếp cận **mobile-first** — kiểu mặc định áp dụng cho màn hình nhỏ, sau đó ghi đè cho màn hình lớn hơn.
-
-**Các breakpoint mặc định:**
-
-| Tiền tố | Kích thước tối thiểu | Mô tả |
-|---|---|---|
-| *(không có)* | `0px` | Mặc định (mobile) |
-| `sm:` | `640px` | Màn hình nhỏ |
-| `md:` | `768px` | Màn hình trung bình (tablet) |
-| `lg:` | `1024px` | Màn hình lớn (desktop) |
-| `xl:` | `1280px` | Màn hình rất lớn |
-| `2xl:` | `1536px` | Màn hình cực lớn |
-
-**Ví dụ:**
-
+## 2. Layout cốt lõi
 ```html
-<div class="text-center md:text-left lg:text-right">
-  Responsive Text
-</div>
+<div class="container mx-auto flex items-center justify-between gap-4 p-4"></div>
+<div class="grid grid-cols-1 gap-4 md:grid-cols-3"></div>
 ```
+Nhớ các nhóm: `block`, `inline`, `hidden`, `relative/absolute/fixed/sticky`, `flex`, `grid`, `container`, `z-*`, `overflow-*`.
+- Flex: `flex-row/col`, `justify-*`, `items-*`, `flex-wrap`, `grow/shrink`, `gap-*`.
+- Grid: `grid-cols-*`, `grid-rows-*`, `col-span-*`, `place-*`.
 
-| Kích thước màn hình | Kết quả |
-|---|---|
-| Nhỏ (mặc định) | Văn bản căn **giữa** |
-| Trung bình (`md`) trở lên | Văn bản căn **trái** |
-| Lớn (`lg`) trở lên | Văn bản căn **phải** |
+## 3. Spacing và kích thước
+- Khoảng cách: `p-*`, `px-*`, `py-*`, `m-*`, `mx-auto`, `space-*`, `gap-*`.
+- Kích thước: `w-*`, `h-*`, `min/max-w-*`, `min/max-h-*`, `size-*`.
+- Giá trị tùy ý: `w-[37rem]`, `bg-[#123456]`.
 
----
-
-## 7. Nâng cao — States & Dark Mode
-
-### 7.1. State Variants (Biến thể trạng thái)
-
-Sử dụng các tiền tố pseudo-class như `hover:`, `focus:`, `active:`, `disabled:` để tạo kiểu cho phần tử ở các trạng thái khác nhau.
-
-| Tiền tố | Mô tả |
-|---|---|
-| `hover:` | Khi di chuột qua phần tử |
-| `focus:` | Khi phần tử được focus |
-| `active:` | Khi phần tử đang được nhấn |
-| `disabled:` | Khi phần tử bị vô hiệu hóa |
-
-**Ví dụ:**
-
+## 4. Typography và màu
 ```html
-<button class="bg-green-500 hover:bg-green-700 focus:ring-2 active:bg-green-800">
-  Button
+<h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">
+  Tiêu đề
+</h1>
+```
+- Text: `text-{size}`, `font-{weight}`, `leading-*`, `tracking-*`, `text-left/center/right`, `truncate`, `line-clamp-*`.
+- Màu: `text-*`, `bg-*`, `border-*`, `ring-*`, có opacity như `bg-black/50`.
+- Trang trí: `rounded-*`, `shadow-*`, `border`, `divide-*`, `opacity-*`.
+
+## 5. Responsive (mobile-first)
+Breakpoint mặc định: `sm` 640, `md` 768, `lg` 1024, `xl` 1280, `2xl` 1536.
+```html
+<div class="text-sm md:text-base lg:text-lg">...</div>
+```
+Class không prefix áp dụng cho mobile; prefix chỉ áp dụng từ breakpoint đó trở lên.
+
+## 6. State variants và dark mode
+```html
+<button class="bg-blue-500 hover:bg-blue-600 focus:ring-2 disabled:opacity-50">
+  Gửi
 </button>
+<div class="bg-white text-black dark:bg-gray-900 dark:text-white"></div>
 ```
+Variants thường dùng: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `group-hover:`, `peer-checked:`, `dark:`.
 
-### 7.2. Dark Mode (Chế độ tối)
-
-- Bật dark mode trong file cấu hình `tailwind.config.js`.
-- Sử dụng tiền tố `dark:` để áp dụng kiểu dáng trong chế độ tối.
-
-**Ví dụ:**
-
-```html
-<div class="bg-white dark:bg-gray-800 text-black dark:text-white">
-  Dark mode support
-</div>
-```
-
-| Chế độ | Nền | Chữ |
-|---|---|---|
-| Light (sáng) | Trắng (`bg-white`) | Đen (`text-black`) |
-| Dark (tối) | Xám đậm (`bg-gray-800`) | Trắng (`text-white`) |
-
----
-
-## 8. Tái sử dụng kiểu dáng với `@apply`
-
-Sử dụng directive `@apply` để gộp nhiều lớp tiện ích thành **một class CSS tái sử dụng**. Rất hữu ích khi cần trích xuất các mẫu tiện ích lặp đi lặp lại.
-
-**Ví dụ:**
-
+## 7. Component và `@apply`
 ```css
-.btn-primary {
-  @apply bg-blue-500 text-white font-bold py-2 px-4 rounded;
+@layer components {
+  .btn-primary { @apply rounded px-4 py-2 font-semibold text-white bg-blue-600; }
 }
 ```
+Dùng `@apply` cho pattern lặp lại; không lạm dụng để biến Tailwind thành CSS truyền thống. Với component framework, ưu tiên tạo component dùng chung.
 
-**Sử dụng:**
-
-```html
-<!-- Thay vì viết dài dòng -->
-<button class="bg-blue-500 text-white font-bold py-2 px-4 rounded">Click</button>
-
-<!-- Chỉ cần dùng class đã trích xuất -->
-<button class="btn-primary">Click</button>
-```
-
-> ⚠️ Chỉ nên dùng `@apply` khi một nhóm class được lặp lại **nhiều lần**. Nếu chỉ dùng một lần, việc viết trực tiếp các utility class trong HTML là đủ.
-
----
-
-## 9. Tối ưu hóa cho Production
-
-| Kỹ thuật | Mô tả |
-|---|---|
-| **Purge CSS không dùng** | Tailwind tự động loại bỏ CSS không sử dụng thông qua cấu hình `purge`/`content` để giữ bundle production nhỏ gọn |
-| **Minify CSS** | Nén file CSS cuối cùng để tải nhanh hơn |
-| **Just-In-Time (JIT) Mode** | Engine JIT sinh CSS **theo yêu cầu** khi bạn viết, giúp build nhanh hơn và bundle CSS nhỏ hơn |
-
----
-
-## 10. Hệ sinh thái & Công cụ
-
-### 10.1. Thư viện component
-
-| Tên | Mô tả |
-|---|---|
-| **Tailwind UI** | Bộ component cao cấp (trả phí) |
-| **Headless UI** | Component UI không có kiểu dáng, hỗ trợ accessibility |
-| **DaisyUI** | Thư viện component miễn phí cho Tailwind |
-| **Flowbite** | Bộ component và block xây dựng trên Tailwind |
-
-### 10.2. Plugin
-
-Mở rộng Tailwind với các plugin cho **forms**, **typography**, **aspect-ratio** và nhiều hơn nữa.
-
-### 10.3. Template & Ví dụ
-
-| Tên | Mô tả |
-|---|---|
-| **HyperUI** | Template miễn phí |
-| **Tailwind Components** | Bộ sưu tập component cộng đồng |
-
----
-
-## 11. Bắt đầu sử dụng
-
-### Bước 1: Cài đặt Tailwind
-
-Cài đặt qua npm/yarn dưới dạng dev dependency:
-
-```bash
-npm install -D tailwindcss
-```
-
-### Bước 2: Tạo file cấu hình
-
-Tạo file `tailwind.config.js`:
-
-```bash
-npx tailwindcss init
-```
-
-### Bước 3: Thêm các directive Tailwind
-
-Thêm các directive `@tailwind` vào file CSS chính:
-
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-```
-
-### Bước 4: Thiết lập quy trình build
-
-Thiết lập quy trình build (ví dụ: với **PostCSS**) để xử lý CSS.
-
+## 8. Theme và cấu hình
 ```js
-// postcss.config.js
+// tailwind.config.js
 module.exports = {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
+  content: ["./src/**/*.{html,js,ts,jsx,tsx}"],
+  darkMode: "class",
+  theme: { extend: { colors: { brand: "#2563eb" } } },
+  plugins: [],
 };
 ```
+- `content` phải bao phủ mọi file chứa class để build không loại nhầm.
+- Dùng `theme.extend` để thêm, tránh ghi đè toàn bộ theme nếu không cần.
+- Tailwind v4 có quy trình cấu hình khác; kiểm tra version dự án trước khi dùng hướng dẫn v3.
 
-> 💡 Sau khi hoàn tất các bước trên, bạn có thể bắt đầu sử dụng các utility class của Tailwind trực tiếp trong HTML.
+## 9. Production và công cụ
+- Build production sẽ loại utility không xuất hiện trong nguồn đã khai báo.
+- Class tạo động như `bg-${color}-500` có thể bị thiếu; dùng map class đầy đủ hoặc safelist.
+- Có thể dùng plugin/forms/typography và thư viện component, nhưng cần kiểm tra bundle và tính nhất quán.
+
+## 10. Quy trình ghi nhớ
+1. Cài Tailwind và cấu hình `content`.
+2. Tạo CSS entry, nạp directives theo version.
+3. Dùng utility mobile-first.
+4. Thêm state, dark mode và breakpoint khi cần.
+5. Tách component lặp lại; kiểm tra build production.
