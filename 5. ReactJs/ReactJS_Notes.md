@@ -1600,6 +1600,698 @@ function Label() {
 
 *(Lưu ý: Để hoàn thiện cấu trúc, bạn sẽ cần nhúng `<Square />` và `<Label />` vào bên trong câu lệnh `return` của `Card` component).*
 
+---
 
+# Chương 10: AJAX, Router, SSR
 
+## 1. React Router
+### 1.1 Introduction (Giới thiệu)
+- **React Router** giúp đồng bộ giao diện người dùng (UI) với URL hiện tại.
+- Nó sở hữu một API đơn giản nhưng đi kèm các tính năng mạnh mẽ được tích hợp sẵn như:
+  - Tải mã lười biếng (lazy code loading).
+  - Khớp tuyến đường động (dynamic route matching).
+  - Xử lý chuyển đổi vị trí (location transition handling).
+- **Nguyên tắc:** Hãy biến URL thành yếu tố đầu tiên bạn nghĩ đến (first thought) khi thiết kế luồng ứng dụng, chứ không phải là điều cần nghĩ đến sau cùng (after-thought).
 
+### 1.2 React-router packages
+- `react-router`: Chứa các core components dành cho việc định tuyến trong các ứng dụng React.
+- `react-router-dom`: Cung cấp các components dành riêng cho môi trường trình duyệt (ứng dụng web).
+- `react-router-native`: Cung cấp các components dành riêng cho ứng dụng di động được tạo bằng React Native.
+- Bạn chỉ cần cài đặt `react-router-dom` (hoặc native) vì chúng đã tự động export các components môi trường tương ứng cộng với mọi thứ mà core `react-router` export.
+
+### 1.3 Installation (Cài đặt)
+Để xây dựng một ứng dụng web (không phải ứng dụng di động native), chúng ta cần cài đặt package `react-router-dom`.
+Chạy lệnh sau trong terminal:
+```bash
+npx create-react-router@latest --template remix-run/react-router-templates/<template-name>
+```
+
+---
+
+## 2. Các khái niệm cốt lõi của React Router
+
+### 2.1 Create a Router and Render (Tạo và hiển thị Router)
+Sử dụng `createBrowserRouter` để cấu hình router và truyền nó vào component `<RouterProvider>`.
+
+```jsx
+import { createBrowserRouter, RouterProvider } from "react-router";
+import React from "react";
+import ReactDOM from "react-dom/client";
+
+// Khởi tạo router
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <div>Hello World</div>,
+  },
+]);
+
+const root = document.getElementById("root");
+ReactDOM.createRoot(root).render(
+  <RouterProvider router={router} />
+);
+```
+
+### 2.2 Nested Routes (Tuyến đường lồng nhau)
+- Các route có thể được lồng vào bên trong các parent route (tuyến đường cha) thông qua thuộc tính `children`.
+- Các child routes (tuyến đường con) sẽ được render thông qua component `<Outlet />` đặt bên trong parent route.
+
+```jsx
+// 1. Cấu hình Nested Routes
+createBrowserRouter([
+  {
+    path: "/dashboard",
+    Component: Dashboard,
+    children: [
+      { index: true, Component: Home }, // index route (mặc định)
+      { path: "settings", Component: Settings },
+    ],
+  },
+]);
+
+// 2. Component Dashboard (Cha)
+import { Outlet } from "react-router";
+
+export default function Dashboard() {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      {/* <Outlet /> sẽ render <Home> hoặc <Settings> tùy theo URL */}
+      <Outlet />
+    </div>
+  );
+}
+```
+
+### 2.3 Layout Routes
+Việc **bỏ trống thuộc tính `path`** trong một route sẽ tạo ra một Layout (khung bọc ngoài) cho các children của nó mà không thêm bất kỳ phân đoạn nào vào URL.
+
+```jsx
+createBrowserRouter([
+  {
+    // Không có path, chỉ là một Component bọc layout
+    Component: MarketingLayout,
+    children: [
+      { index: true, Component: Home },
+      { path: "contact", Component: Contact },
+    ],
+  }
+]);
+```
+
+### 2.4 Dynamic Segments (Phân đoạn URL động)
+- Nếu một phân đoạn của path bắt đầu bằng dấu hai chấm `:` thì nó sẽ trở thành "dynamic segment".
+- Khi route khớp với URL, giá trị động đó sẽ được parse (phân tích) từ URL và cung cấp dưới dạng `params` cho các API khác của router.
+
+```jsx
+{
+  path: "teams/:teamId", // :teamId là dynamic segment
+  loader: async ({ params }) => {
+    // Giá trị params.teamId có thể được lấy từ URL
+    let team = await fetchTeam(params.teamId);
+    return { name: team.name };
+  },
+  Component: Team,
+}
+```
+
+---
+
+## 3. Navigation & Redirects
+
+### 3.1 `<Prompt>`
+- Được sử dụng để nhắc nhở người dùng trước khi họ chuyển hướng rời khỏi một trang.
+- Render `<Prompt>` khi ứng dụng rơi vào một trạng thái không muốn người dùng vô tình rời đi (ví dụ: form nhập liệu mới điền được một nửa).
+
+**Sử dụng với `message` (chuỗi văn bản):**
+```jsx
+import { Prompt } from 'react-router';
+
+<Prompt
+  when={formIsHalfFilledOut}
+  message="Are you sure you want to leave?"
+/>
+```
+- Thuộc tính `when` (boolean): Kiểm soát việc Prompt có được kích hoạt hay không.
+- Thuộc tính `message` có thể là một chuỗi, hoặc một function (hàm). Nếu là function, nó sẽ được gọi với object `location` tiếp theo và trả về chuỗi thông báo hoặc `true` để cho phép chuyển trang.
+
+### 3.2 `<Redirect>`
+- Việc render `<Redirect>` sẽ tự động chuyển hướng đến một location (vị trí) mới.
+- Vị trí mới này sẽ **ghi đè** (override) vị trí hiện tại trong history stack, tương tự như các server-side redirects (mã HTTP 3xx).
+
+**Sử dụng `to` dưới dạng String:**
+```jsx
+<Redirect to="/somewhere/else" />
+```
+
+**Sử dụng `to` dưới dạng Object:**
+Truyền một đối tượng cho phép mang theo thông tin trạng thái bổ sung (state).
+```jsx
+<Redirect
+  to={{
+    pathname: "/login",
+    search: "?utm=your+face",
+    state: { referrer: currentLocation } // Truyền state ẩn
+  }}
+/>
+```
+- Trạng thái này có thể được truy cập trong component đích (ví dụ: Login component) thông qua `this.props.location.state`.
+
+**Sử dụng thuộc tính `from` (khi đặt trong `<Switch>`):**
+Dùng để khớp một location và chuyển hướng, đồng thời có thể truyền cả params (tham số động).
+```jsx
+<Switch>
+  <Redirect from='/old-path' to='/new-path' />
+  <Route path='/new-path' component={Place} />
+</Switch>
+
+// Redirect với tham số động (parameters)
+<Switch>
+  <Redirect from='/users/:id' to='/users/profile/:id' />
+  <Route path='/users/profile/:id' component={Profile} />
+</Switch>
+```
+
+**Các thuộc tính khác của `<Redirect>`:**
+- `exact` (boolean): Yêu cầu khớp chính xác URL (tương tự như `Route.exact`).
+- `push` (boolean): Nếu `true`, việc chuyển hướng sẽ đẩy (push) một entry mới vào history thay vì ghi đè (replace) entry hiện tại.
+```jsx
+<Redirect push to="/somewhere/else" />
+```
+
+### 3.3 `<Switch>`
+- Giúp render (hiển thị) **chỉ một** child `<Route>` hoặc `<Redirect>` **đầu tiên** khớp với location.
+- Sự khác biệt so với việc chỉ dùng nhiều thẻ `<Route>` liên tiếp: `<Switch>` render một route theo cách **độc quyền (exclusively)**, tức là chỉ component đầu tiên khớp mới được render. Ngược lại, nếu chỉ dùng `<Route>`, tất cả các route khớp với location đều sẽ được render **đồng thời (inclusively)**.
+
+```jsx
+import { Switch, Route } from 'react-router';
+
+<Switch>
+  <Route exact path="/" component={Home} />
+  <Route path="/about" component={About} />
+  <Route path="/:user" component={User} />
+  {/* Route cuối không có path đóng vai trò là trang 404 (Not Found) */}
+  <Route component={NoMatch} />
+</Switch>
+```
+
+### 3.4 Understanding and Using Links (`<Link>`)
+- Component `<Link>` nhận vào một thuộc tính `to` để nói cho React Router biết đích đến cần điều hướng tới mà không làm tải lại (reload) trang.
+
+**Truyền `to` dạng String:**
+```jsx
+import { Link } from 'react-router-dom';
+
+const Nav = () => (
+  <Link to='/'>Home</Link>
+);
+```
+
+**Truyền `to` dạng Object:**
+Có thể truyền một location object (gồm pathname, hash, search, và state).
+```jsx
+<Link to={{
+  pathname: '/me',
+  search: '?sort=asc',
+  hash: '#hash',
+  state: { fromHome: true }
+}} />
+```
+
+### 3.5 `<Link>` vs `<NavLink>`
+- `<NavLink>` là một biến thể nâng cao của `<Link>`, bổ sung thêm các thông tin về **styling** (kiểu dáng) cho phần tử được render mỗi khi URL hiện tại khớp với đường dẫn đích.
+
+```jsx
+import { NavLink } from 'react-router-dom';
+
+<NavLink
+  to="/me"
+  activeStyle={{ fontWeight: "bold", color: "red" }}
+  activeClassName="selected"
+>
+  My Profile
+</NavLink>
+```
+
+---
+
+## 4. Server-Side Rendering (SSR)
+
+### 4.1 What is Server-Side Rendering? (SSR)
+- **SSR** là quá trình máy chủ (server) tạo ra toàn bộ cấu trúc HTML cho một trang web để phản hồi lại yêu cầu điều hướng (navigation).
+- Đối với React hoặc bất kỳ thư viện/framework JavaScript nào khác, SSR là một kỹ thuật dùng để render một ứng dụng Single Page App (SPA) — vốn dĩ chỉ chạy ở phía client — ngay trên server. Sau đó, server sẽ gửi một trang đã được render hoàn chỉnh về cho trình duyệt.
+
+### 4.2 How Server-side Rendering works?
+**Quy trình hoạt động cơ bản:**
+1. Server gửi phản hồi đã được render (HTML tĩnh) về cho trình duyệt.
+2. Trình duyệt hiển thị HTML (**Page now viewable** - Trang lúc này đã có thể nhìn thấy được).
+3. Trình duyệt tiếp tục tải và thực thi mã JavaScript của React.
+4. React "tiếp quản" trang web (**Page now interactable** - Trang lúc này mới có thể tương tác được).
+
+**Ưu điểm (PROS):**
+- **Consistent SEO:** Tối ưu hóa công cụ tìm kiếm nhất quán và hiệu quả.
+- **Performance:** Cải thiện tốc độ tải trang ban đầu (initial page load).
+- **SMO:** Hoạt động rất tốt với các trình thu thập dữ liệu của mạng xã hội (Social Media crawlers).
+
+**Nhược điểm (CONS):**
+- Số lượng request lên server nhiều và thường xuyên.
+- Có thể làm chậm tốc độ render trang ở khâu đầu tiên (**TTFB** — Time to first byte) do server mất thời gian xử lý.
+- Kiến trúc phức tạp (đặc biệt đối với giải pháp universal/isomorphic approach).
+
+### 4.3 How to SSR?
+Trọng tâm là làm thế nào để triển khai SSR tích hợp cùng với React.
+
+**Phương pháp (Methodology):**
+- Render ban đầu trên server.
+- Hiển thị HTML có cấu trúc hoàn chỉnh.
+- Thực thi JS (JS executions).
+- React tiếp quản / re-render (quá trình này gọi là **Rehydration**).
+
+*(Lưu ý: Thời điểm người dùng nhìn thấy nội dung là **FCP** - First Contentful Paint, nhưng thời điểm có thể bắt đầu tương tác là **TTI** - Time To Interactive, và giữa hai khoảng thời gian này quá trình Client Rendering sẽ bị "blocked").*
+
+**Những thách thức (Challenges):**
+- Chạy mã JSX trên môi trường Node.js.
+- Cấu hình Redux trên server.
+- Xử lý Routing (định tuyến cả 2 bờ server/client).
+- Quá trình Rehydration (Đồng bộ trạng thái DOM tĩnh với Virtual DOM của React).
+
+---
+
+# Chương 11: Making Your Component Reusable
+
+## 1. Understanding Mixins
+- **Câu hỏi phổ biến:** *"Làm thế nào để chia sẻ mã (share code) giữa nhiều component khác nhau?"* - Đây là một trong những câu hỏi đầu tiên mọi người thường hỏi khi bắt đầu học React.
+- Mixins từng là cách phổ biến để giải quyết vấn đề này trong các phiên bản React cũ (tuy nhiên, hiện nay React khuyến khích sử dụng HOC hoặc Hooks thay thế).
+
+## 2. A Higher Order Component (HOC) in ECMA6
+- **Khái niệm:** HOC là một pattern nâng cao trong React để tái sử dụng logic của component. Về cơ bản, nó là một hàm nhận vào một Component và trả về một Component mới có kèm theo logic bổ sung.
+- **Luồng dữ liệu (Dựa trên sơ đồ kiến trúc HOC):**
+  - Khi HOC nhận được `OriginalProps` & `ExternalProps` từ bên ngoài:
+    - Một phần props sẽ đi vào **HOC Logic** (kết hợp với `State` nội bộ của HOC) để tạo ra các `InjectedProps` (Props được tiêm thêm).
+    - `InjectedProps` cùng với `OriginalProps` ban đầu sau đó được truyền xuống cho **Component** gốc.
+  - Nhờ vậy, Component gốc nhận được thêm tính năng/logic từ HOC mà không cần thay đổi code bên trong chính nó.
+
+## 3. Different types of validations in React
+### 3.1 Validations (Xác thực dữ liệu)
+- Có nhiều cơ chế xác thực dữ liệu khác nhau trong React. Tất cả đều chung mục đích: **Ngăn chặn người dùng nhập sai dữ liệu (wrong user input) càng sớm càng tốt.**
+
+### 3.2 Validating props (Xác thực thuộc tính Props)
+- Việc xác thực Properties (Props) là một cách hữu ích để ép buộc (force) component phải được sử dụng đúng cách.
+- **Lợi ích:**
+  - Hỗ trợ trong quá trình phát triển (development) để tránh các bugs và sự cố sau này khi ứng dụng mở rộng lớn hơn.
+  - Giúp code dễ đọc hơn, vì lập trình viên có thể nhìn vào là biết ngay mỗi component nên được sử dụng với dữ liệu kiểu gì.
+- **Cách sử dụng PropTypes:**
+  - `PropTypes` xuất ra (exports) một loạt các hàm kiểm tra (validators) như `PropTypes.string`, `PropTypes.number`, v.v., để đảm bảo dữ liệu bạn nhận được là hợp lệ.
+  - **Cơ chế cảnh báo (Warning):** Khi bạn truyền một giá trị không hợp lệ cho một prop, một cảnh báo sẽ hiển thị trong JavaScript console của trình duyệt. 
+  - **Lưu ý hiệu suất:** Vì lý do hiệu năng, tính năng kiểm tra `propTypes` **chỉ hoạt động trong chế độ development (phát triển)**, và bị loại bỏ ở production.
+
+## 4. The structure of a React component (Cấu trúc một Component)
+Thứ tự khai báo chuẩn mực thường thấy của một React Component (đặc biệt khi dùng Class Component):
+1. **The component declared Data:** Các dữ liệu khởi tạo (State mặc định, biến nội bộ).
+2. **The propType:** Khai báo kiểu dữ liệu cho props (bao gồm cả defaultProps).
+3. **Component lifecycle methods:** Các hàm vòng đời như `componentDidMount`, `componentWillUnmount`, v.v.
+4. **Logic methods:** Các hàm xử lý nghiệp vụ, xử lý sự kiện đặt bên trong các lifecycle hoặc các hàm tiện ích riêng.
+5. **Render method:** Hàm `render()` bắt buộc phải có để trả về giao diện (JSX).
+
+---
+
+# Chương 12: Context
+
+## 1. When to Use Context (Khi nào nên sử dụng Context?)
+- **Mục đích:** Context được thiết kế để chia sẻ các dữ liệu được coi là "global" (toàn cục) đối với một cây (tree) các React components.
+- **Ví dụ:** Trạng thái đăng nhập của người dùng (authenticated user), giao diện/theme hiện tại (dark/light mode), hoặc ngôn ngữ ưu tiên (preferred language).
+- Thay vì truyền dữ liệu (prop drilling) thủ công qua từng cấp component trung gian từ trên xuống dưới (ví dụ như truyền một prop `theme` cho hàng loạt component con), **bạn có thể sử dụng context để tránh việc phải truyền props qua các element trung gian** không cần thiết.
+
+## 2. Before You Use Context (Lưu ý trước khi dùng Context)
+- Context chủ yếu được sử dụng khi một số dữ liệu cần được truy cập bởi *nhiều component* ở các mức lồng nhau (nesting levels) khác nhau.
+- **Áp dụng một cách hạn chế (Apply it sparingly):** Việc lạm dụng context sẽ khiến cho việc tái sử dụng component trở nên khó khăn hơn.
+- Nếu mục đích duy nhất của bạn chỉ là để tránh việc truyền một prop qua quá nhiều cấp, giải pháp **Component Composition** (Truyền component vào component khác dưới dạng children) thường đơn giản và tốt hơn Context.
+  - *Ví dụ:* Nếu `Page` truyền thông tin user xuống `Link` và `Avatar` qua nhiều lớp trung gian, thay vì dùng context, ta có thể khởi tạo trực tiếp `<Avatar user={user} />` trên cùng và truyền nguyên cái component Avatar đó xuống dưới. Các component trung gian sẽ không cần phải biết về props `user` hay `avatarSize`.
+  - Bạn không bị giới hạn chỉ truyền một child (con) cho một component. Bạn có thể truyền nhiều children hoặc định nghĩa nhiều "slots" riêng biệt cho các children.
+
+## 3. API
+
+### 3.1 `React.createContext`
+```jsx
+const MyContext = React.createContext(defaultValue);
+```
+- Tạo ra một Context object. Khi React render một component có đăng ký (subscribe) context này, nó sẽ đọc giá trị context hiện tại từ một **Provider** gần nhất khớp với nó ở phía trên trong cây component.
+- **Giá trị `defaultValue`:** Chỉ được sử dụng khi component *không tìm thấy* bất kỳ Provider nào ở phía trên nó trong cây (tree). Điều này rất hữu ích khi bạn muốn test (kiểm thử) các component một cách độc lập mà không cần bọc chúng trong Provider.
+- *Lưu ý:* Việc truyền giá trị `undefined` vào một Provider (`value={undefined}`) sẽ KHÔNG khiến component tiêu thụ sử dụng lại `defaultValue`.
+
+### 3.2 `useContext` (Hook)
+- `useContext` là một kỹ thuật truyền dữ liệu xuống sâu trong cây component mà không cần truyền props. Thường đi kèm với việc tạo một Provider ở cấp cao và gọi Hook ở component con.
+- Kiểu dữ liệu (type) của giá trị trả về sẽ được suy luận từ giá trị truyền vào `createContext`.
+
+```jsx
+const ThemeContext = createContext("system");
+const useGetTheme = () => useContext(ThemeContext);
+```
+- Component con chỉ cần gọi `useContext(MyContext)` là sẽ nhận được giá trị trực tiếp từ Provider gần nhất.
+
+---
+
+# Chương 13: Reacting with Redux
+
+## 1. Redux là gì và tại sao lại phổ biến?
+- **Vấn đề của React thuần:** Khi ứng dụng lớn lên, việc chia sẻ dữ liệu giữa các component nằm ở các nhánh khác nhau trở nên rất phức tạp (prop drilling). Bạn phải liên tục truyền dữ liệu lên và xuống qua lại giữa các cấp component.
+- **Giải pháp của Redux:** Redux là một bộ chứa trạng thái (state container) có thể dự đoán được dành cho các ứng dụng JavaScript. 
+- Nó tạo ra một "Store" tập trung. Nếu bạn muốn chia sẻ dữ liệu từ một phần của ứng dụng sang phần khác, bạn có thể lấy trực tiếp từ Store mà không cần phải di chuyển dọc theo hệ thống phân cấp component.
+- *Lưu ý:* Redux rất phổ biến trong React, nhưng nó cũng có thể được sử dụng với Angular, Vue.js, hoặc thậm chí là Vanilla JavaScript thuần.
+
+## 2. Các thành phần cốt lõi của Redux (Core Concepts)
+### 2.1 Actions
+- Là các "gói" thông tin (payloads of information) dùng để gửi dữ liệu từ ứng dụng của bạn đến Redux Store.
+- Đây là nguồn thông tin duy nhất cho Store.
+- Ví dụ:
+  ```json
+  {
+    "type": "ADD_TODO",
+    "payload": "Build my first Redux app"
+  }
+  ```
+
+### 2.2 Reducers
+- Reducers quy định cách state của ứng dụng thay đổi như thế nào để đáp ứng lại các `actions` vừa được gửi đến store.
+- Hãy nhớ rằng actions chỉ mô tả *cái gì vừa xảy ra*, còn reducers mới là người quyết định *state sẽ thay đổi ra sao*.
+
+### 2.3 Store
+- Nơi lưu trữ toàn bộ cây trạng thái (state tree) của ứng dụng.
+- Cách duy nhất để thay đổi state bên trong Store là `dispatch` (gửi) một action vào nó, từ đó kích hoạt root reducer để tính toán ra state mới.
+
+## 3. Sử dụng Redux Toolkit (Khuyến nghị hiện tại)
+Trong quá khứ, cần rất nhiều mã (boilerplate code) để thiết lập Redux. Hiện nay, thư viện **Redux Toolkit** giúp giảm thiểu tối đa lượng code này.
+
+### B1. Khởi tạo Store (`configureStore` & `createSlice`)
+Sử dụng `createSlice` để tạo ra các phần state riêng biệt (slices). Mỗi slice sẽ chứa state ban đầu và các reducer (action handlers).
+```javascript
+import { createSlice, configureStore } from '@reduxjs/toolkit';
+
+// 1. Tạo Slice
+export const someSlice = createSlice({
+  name: "someFeature",
+  initialState: { someValue: "" },
+  reducers: {
+    someAction: (state) => {
+      state.someValue = "something";
+    }
+  }
+});
+
+// 2. Tạo Store
+export const store = configureStore({
+  reducer: {
+    someFeature: someSlice.reducer,
+  }
+});
+```
+
+### B2. Cung cấp Store cho ứng dụng React (`<Provider>`)
+Sử dụng component `Provider` của thư viện `react-redux` và bọc nó bên ngoài toàn bộ ứng dụng hoặc phần ứng dụng cần truy cập Store.
+```jsx
+import { Provider } from 'react-redux';
+
+<Provider store={store}>
+  <App />
+</Provider>
+```
+
+### B3. Truy cập dữ liệu từ Store (`useSelector`)
+Các component lấy dữ liệu từ Redux Store thông qua hook `useSelector`.
+```javascript
+import { useSelector } from 'react-redux';
+
+const someValue = useSelector(state => state.someFeature.someValue);
+```
+
+### B4. Gửi action lên Store (`useDispatch`)
+Sử dụng hook `useDispatch` để lấy hàm dispatch, sau đó gọi hàm này và truyền vào action được tạo ra từ slice.
+```jsx
+import { useDispatch } from 'react-redux';
+
+const dispatch = useDispatch();
+
+return (
+  <button onClick={() => dispatch(someSlice.actions.someAction())}>
+    Some button
+  </button>
+);
+```
+
+## 4. Tổng kết (Conclusion)
+- Về nhiều mặt, Redux được thiết kế để khắc phục những điểm yếu trong cách luồng dữ liệu (data flow) hoạt động của React.
+- Tuy nhiên, **Redux không phải là công cụ hoàn hảo**. Giống như mọi công cụ lập trình khác, nó chỉ là một trong nhiều cách để hoàn thành công việc.
+- Không phải lúc nào cũng cần Redux:** Thêm Redux vào một dự án nhỏ hoặc không có nhu cầu quản lý state phức tạp sẽ chỉ tạo ra sự dư thừa và làm tăng độ phức tạp không đáng có.
+
+---
+
+# Chương 14: Thinking in React
+
+Quá trình "Thinking in React" (Tư duy theo cách của React) là một quy trình chuẩn gồm 5 bước giúp bạn xây dựng bất kỳ ứng dụng React nào từ một bản thiết kế (mock) ban đầu.
+
+## Bước 0: Bắt đầu với một bản thiết kế (Start With A Mock)
+Hãy tưởng tượng bạn đã có một JSON API và một bản thiết kế (mock) từ designer.
+- **Mock:** Giao diện gồm thanh tìm kiếm, checkbox và danh sách sản phẩm chia theo danh mục (category).
+- **JSON API:** Trả về dữ liệu dạng mảng các đối tượng chứa thông tin như `category`, `price`, `stocked`, `name`.
+  Ví dụ:
+  ```json
+  [
+    { "category": "Sporting Goods", "price": "$49.99", "stocked": true, "name": "Football" },
+    { "category": "Electronics", "price": "$99.99", "stocked": true, "name": "iPod Touch" }
+  ]
+  ```
+
+## Bước 1: Chia UI thành một hệ thống phân cấp Component (Break The UI Into A Component Hierarchy)
+- Phân tích bản thiết kế và chia nhỏ giao diện thành các thành phần (components) độc lập.
+- Các component nằm trong component khác ở bản thiết kế sẽ trở thành component con (child) trong hệ thống phân cấp (Hierarchy).
+- **Ví dụ trong Mock trên:**
+  - `FilterableProductTable` (Bọc toàn bộ ứng dụng)
+    - `SearchBar` (Nhận thông tin tìm kiếm từ người dùng)
+    - `ProductTable` (Hiển thị và lọc danh sách dữ liệu)
+      - `ProductCategoryRow` (Hiển thị tiêu đề cho mỗi danh mục sản phẩm)
+      - `ProductRow` (Hiển thị từng dòng cho từng sản phẩm)
+
+## Bước 2: Xây dựng một phiên bản tĩnh (Build A Static Version in React)
+- **Mục tiêu:** Xây dựng một phiên bản ứng dụng chỉ hiển thị dữ liệu (data model) mà chưa có bất kỳ sự tương tác nào.
+- Ở bước này, bạn sẽ xây dựng các component tĩnh và truyền dữ liệu thông qua **props** (từ cha xuống con).
+- **Tuyệt đối không sử dụng `state`** ở bước này. State chỉ dành riêng cho sự tương tác (interactivity) - tức là dữ liệu thay đổi theo thời gian.
+- *(Phân biệt Props vs State: Props dùng để truyền dữ liệu, State dùng để quản lý dữ liệu có thể thay đổi bên trong component).*
+
+## Bước 3: Xác định cấu trúc State tối giản nhất (Identify The Minimal Representation Of UI State)
+- Hãy liệt kê tất cả các loại dữ liệu trong ứng dụng. (Ví dụ: Danh sách gốc, Văn bản tìm kiếm, Trạng thái checkbox, Danh sách đã lọc).
+- Đặt 3 câu hỏi cho mỗi mảnh dữ liệu để quyết định xem nó có phải là **State** hay không:
+  1. Nó có được truyền từ component cha xuống thông qua props không? $\rightarrow$ Nếu **CÓ**, nó không phải là state.
+  2. Nó có giữ nguyên không thay đổi theo thời gian không? $\rightarrow$ Nếu **CÓ**, nó không phải là state.
+  3. Bạn có thể tính toán ra nó dựa trên bất kỳ state hoặc props nào khác trong component không? $\rightarrow$ Nếu **CÓ**, nó chắc chắn **không phải** là state. *(Ví dụ: Danh sách sản phẩm đã lọc có thể được tính từ Danh sách gốc và Văn bản tìm kiếm, nên Danh sách đã lọc KHÔNG phải là state).*
+
+## Bước 4: Xác định vị trí đặt State (Identify Where Your State Should Live)
+- React sử dụng luồng dữ liệu một chiều (one-way data flow) truyền từ trên xuống dưới. 
+- **Quy trình xác định component chứa state:**
+  1. Xác định mọi component cần render nội dung dựa trên state đó.
+  2. Tìm một component cha chung (common owner component) - một component nằm bên trên tất cả các component vừa tìm được.
+  3. Component cha chung này (hoặc một component nào đó cao hơn nữa) sẽ là nơi sở hữu (chứa) state.
+  4. Nếu bạn không tìm thấy component nào phù hợp để chứa state, hãy tạo một component mới chỉ nhằm mục đích giữ state và đặt nó bên trên component cha chung.
+
+## Bước 5: Thêm luồng dữ liệu ngược (Add Inverse Data Flow)
+- **Mục tiêu:** Cho phép các component con (ví dụ: form nhập liệu, thanh tìm kiếm) cập nhật ngược lại state đang nằm ở component cha.
+- Vì các component chỉ nên cập nhật state của riêng chúng, `FilterableProductTable` (cha) sẽ truyền các **callbacks** (hàm xử lý sự kiện) xuống cho `SearchBar` (con).
+- Những callbacks này sẽ được gọi mỗi khi người dùng thay đổi dữ liệu (thông qua sự kiện `onChange` trên thẻ input).
+- Khi đó, các callbacks được truyền từ cha sẽ gọi hàm `setState()`, từ đó kích hoạt quá trình cập nhật toàn bộ ứng dụng.
+
+---
+
+# Chương 15: Interacting with RESTful APIs
+
+## 1. RESTful API là gì? (What is a RESTful API?)
+- **RESTful API (Representational State Transfer)** là một kiểu kiến trúc (architectural style) dành cho giao diện lập trình ứng dụng (API), sử dụng các **HTTP requests** để truy cập và sử dụng dữ liệu.
+- Dữ liệu đó có thể được sử dụng để thực hiện các thao tác cơ bản thông qua các HTTP methods như: **GET, PUT, POST, DELETE**. Các hành động này tương ứng với các thao tác Đọc (Read), Cập nhật (Update), Tạo mới (Create) và Xóa (Delete) liên quan đến các tài nguyên (resources) trên máy chủ.
+
+## 2. Các thành phần chính (Main elements of RESTful API)
+- **Client (Máy khách):** Là phần mềm hoặc ứng dụng thực hiện gửi yêu cầu lấy tài nguyên từ máy chủ.
+- **Server (Máy chủ):** Là phần mềm kiểm soát các tài nguyên và chịu trách nhiệm phản hồi lại các yêu cầu từ Client.
+- **Resource (Tài nguyên):** Bất kỳ dữ liệu hoặc nội dung nào (chẳng hạn như văn bản, video, hình ảnh) mà server kiểm soát và có khả năng trả về cho Client.
+
+Để truy cập một tài nguyên, Client sẽ gửi một **HTTP request** tới Server. Request này bao gồm 4 phần chính:
+1. **HTTP method:** Xác định hành động sẽ thực hiện với tài nguyên (như `GET`, `PUT`, `POST`, `DELETE`, v.v.).
+2. **Endpoint:** Đường dẫn URL cho biết vị trí cụ thể của tài nguyên đang nằm ở đâu trên server.
+3. **Header:** Chứa các chi tiết phụ trợ cần thiết để thực thi cuộc gọi (như thông tin xác thực, kiểu dữ liệu gửi lên hoặc muốn nhận về).
+4. **Body:** Chứa thông tin/dữ liệu thực tế được gửi từ Client lên Server (thường dùng trong POST, PUT) hoặc được Server trả về.
+
+## 3. Lợi ích của RESTful API (Benefits)
+REST APIs giành được sự phổ biến khổng lồ nhờ mang lại rất nhiều lợi ích cho lập trình viên và tổ chức:
+- **Simplicity (Sự đơn giản):** Sử dụng các HTTP methods thông dụng, giúp chúng rất dễ để thiết kế, triển khai và sử dụng.
+- **Independence (Sự độc lập):** Không phụ thuộc nền tảng. Lập trình viên có thể dùng hầu hết mọi ngôn ngữ lập trình để tạo và gọi REST APIs.
+- **Flexible (Sự linh hoạt):** Hỗ trợ trả về nhiều định dạng dữ liệu khác nhau, điển hình như JSON, XML và văn bản thuần (plain text).
+- **Scalable (Khả năng mở rộng):** Bản chất *stateless* (không lưu giữ trạng thái) của REST giúp hỗ trợ cực tốt khả năng mở rộng theo chiều ngang (horizontal scaling), cho phép xử lý hàng loạt cuộc gọi API song song.
+- **Cacheable (Có thể lưu bộ nhớ đệm):** Hỗ trợ cơ chế caching để lưu trữ các dữ liệu ít thay đổi vào bộ nhớ cục bộ, giúp tăng tốc độ đáng kể.
+- **Secure (Bảo mật):** Dễ dàng bảo mật các cuộc gọi và luồng trao đổi dữ liệu thông qua Open Authorization (OAuth).
+- **Compatible (Tương thích tốt):** Quản lý phiên bản (versioning) chuẩn mực (vd: `/api/v1/users`, `/api/v2/users`) giúp thêm tính năng mới mà vẫn hỗ trợ (backward compatibility) cho các client đang dùng bản cũ.
+
+## 4. Ví dụ về Endpoint (Example of a RESTful endpoint)
+Một endpoint (đường dẫn truy cập) điển hình thường tuân theo các quy tắc đặt tên (patterns) rất trực quan:
+- `/users` - Quản lý tài khoản người dùng (Lấy danh sách người dùng, hoặc thêm người dùng mới).
+- `/posts` - Truy cập danh sách các bài viết (blog posts).
+- `/posts/{postId}` – Xử lý chi tiết một bài viết cụ thể (vd: `/posts/12`).
+- `/reports?type=sales` - Lọc tập hợp các báo cáo bằng *query string* (chỉ lấy báo cáo mảng sales).
+
+## 5. Tạo một REST API giả lập (Creating a REST API)
+Trong quá trình phát triển (development), chúng ta thường dùng công cụ **JSON Server** để tạo nhanh một REST API hoàn chỉnh phục vụ cho việc test.
+- **B1. Cài đặt:** Cài đặt package `json-server`
+  ```bash
+  npm i -D json-server@0.17.4
+  ```
+- **B2. Định nghĩa dữ liệu:** Tạo file `db.json` ở thư mục gốc của project với nội dung:
+  ```json
+  {
+    "posts": [
+      { "id": 1, "title": "json-server", "author": "typicode" }
+    ]
+  }
+  ```
+- **B3. Tạo npm script:** Mở `package.json` và thêm script:
+  ```json
+  "scripts": {
+    "server": "json-server --watch db.json --port 3001"
+  }
+  ```
+- **B4. Khởi chạy:** Ở terminal, chạy lệnh `npm run server`. Bạn đã có một API hoàn chỉnh đang chạy tại `http://localhost:3001`.
+
+## 6. Sử dụng Hook `useEffect` kết hợp với `axios`
+**Axios** là một HTTP Client dựa trên Promise rất phổ biến dành cho cả trình duyệt và Node.js. Cài đặt: `npm install axios`
+
+Chúng ta thường kết hợp Axios với hook `useEffect` để thực hiện gọi API (fetch data) ngay khi component vừa được hiển thị (mount).
+
+**Ví dụ:**
+```jsx
+import axios from "axios";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [postData, setPostData] = useState([]);
+
+  // Hàm bất đồng bộ gọi API
+  const fetchPostsData = async () => {
+    // Gọi phương thức GET tới endpoint
+    const response = await axios.get("http://localhost:3001/posts");
+    
+    // axios tự động chuyển đổi JSON trả về, lưu vào response.data
+    setPostData(response.data); 
+  };
+
+  // Sử dụng useEffect để gọi fetchPostsData() 1 lần duy nhất khi component mount
+  useEffect(() => {
+    fetchPostsData();
+  }, []); // Cặp ngoặc vuông rỗng [] là dependency array
+
+  console.log(postData);
+  
+  return (
+    // Render giao diện với dữ liệu `postData` tại đây...
+    <div>Hello API</div>
+  );
+}
+```
+Kết quả hiển thị ở console sẽ là mảng các đối tượng chứa thông tin các bài viết (ví dụ như hình: 2 posts với title và description...).
+
+---
+
+# Chương 16: Middleware and Redux-thunk, Redux-saga
+
+## 1. Middleware là gì? (What is Middleware?)
+- **Middleware** là các đoạn code trung gian (intermediate code) nằm giữa `request` (yêu cầu) và `response` (phản hồi). Nó nhận các yêu cầu, thực thi các lệnh tương ứng trên yêu cầu đó. Khi hoàn thành, nó sẽ trả về phản hồi hoặc chuyển kết quả ủy quyền (delegate result) cho một middleware khác tiếp theo trong hàng đợi.
+- Middleware cung cấp các dịch vụ và chức năng chung cho ứng dụng nằm ngoài những gì hệ điều hành có sẵn. Các tác vụ như: Quản lý dữ liệu, dịch vụ ứng dụng, nhắn tin, xác thực (authentication) và quản lý API đều thường được xử lý bởi middleware.
+- Tóm lại, Middleware giúp lập trình viên xây dựng ứng dụng hiệu quả hơn. Nó hoạt động như một mô liên kết (connective tissue) kết nối giữa các ứng dụng, dữ liệu và người dùng.
+
+## 2. Middleware trong Redux (Middleware in Redux)
+- Trong bối cảnh của Redux, Middleware là một điểm trung gian (intermediate point) nằm ở giữa: **sau khi** gửi (dispatching) một action, và **trước khi** reducer nhận được action đó.
+- Sơ đồ luồng: `(dispatch action -> middleware -> reducer)`
+
+## 3. Giới thiệu Redux Thunk (Introducing Redux Thunk)
+- `Redux-Thunk` là một middleware dành cho Redux, cho phép bạn viết các **action creators trả về một function (hàm)** thay vì trả về một action object (đối tượng hành động) thông thường.
+- Function được trả về này sẽ nhận vào phương thức `dispatch` và hàm `getState` của Redux Store làm đối số.
+- Nhờ đó, nó cho phép bạn:
+  - Gửi (dispatch) nhiều actions cùng một lúc hoặc tuần tự.
+  - Thực hiện các tác vụ bất đồng bộ (asynchronous operations) như gọi API (fetch data).
+  - Truy cập vào state hiện tại (bằng `getState()`) nếu cần thiết trước khi quyết định gửi một action.
+
+### Cú pháp Thunk
+Một **thunk function** chấp nhận 2 đối số: `dispatch` và `getState`:
+```javascript
+const thunkFunction = (dispatch, getState) => {
+  // Logic ở đây có thể dispatch actions hoặc đọc state
+}
+store.dispatch(thunkFunction)
+```
+
+### Viết Thunks sử dụng Arrow Functions
+Thường được dùng cho các logic bất đồng bộ (như gọi API):
+```javascript
+export const fetchTodoById = todoId => async dispatch => {
+  // 1. Gọi API
+  const response = await client.get(`/fakeApi/todo/${todoId}`);
+  // 2. Dispatch action để lưu dữ liệu vào store
+  dispatch(todosLoaded(response.todos));
+}
+```
+
+### Cách sử dụng Thunk trong Component
+Thunk được dispatch bằng cách gọi action creator từ component, giống hệt cách bạn dispatch bất kỳ Redux action nào khác:
+```jsx
+function TodoComponent({ todoId }) {
+  const dispatch = useDispatch();
+
+  const onFetchClicked = () => {
+    // Gọi thunk action creator, nó sẽ trả về 1 function và truyền cho dispatch
+    dispatch(fetchTodoById(todoId));
+  }
+  // ...
+}
+```
+
+### Khi nào nên sử dụng Thunks?
+Bởi vì thunks là công cụ đa dụng (general-purpose), chúng được dùng trong rất nhiều mục đích. Các trường hợp sử dụng phổ biến nhất là:
+- Di chuyển các logic phức tạp ra khỏi components.
+- Thực hiện các request bất đồng bộ hoặc các logic liên quan đến thời gian (timers, intervals).
+- Viết logic cần phải dispatch nhiều actions liên tiếp hoặc kéo dài theo thời gian.
+- Viết logic cần truy cập vào `getState` để đưa ra quyết định hoặc lấy các giá trị state khác đính kèm vào trong một action.
+
+## 4. Giới thiệu Redux Saga (Introducing Redux Saga)
+- `redux-saga` là một thư viện hướng tới việc làm cho các **side effects** của ứng dụng trở nên dễ quản lý hơn, thực thi hiệu quả hơn, dễ test (kiểm thử) hơn và xử lý lỗi tốt hơn. 
+- *Side effects có thể là: những tác vụ bất đồng bộ như lấy dữ liệu (data fetching), hoặc các thao tác "không thuần khiết" (impure things) như truy cập vào bộ nhớ cache của trình duyệt.*
+- **Mô hình tư duy (Mental model):** Hãy hình dung một Saga giống như một **thread (luồng) riêng biệt** trong ứng dụng của bạn, và luồng này chịu trách nhiệm độc lập, hoàn toàn chuyên biệt cho việc xử lý các side effects.
+
+### Ví dụ cơ bản về Saga (Hello Sagas)
+Saga sử dụng các Generator Functions (`function*`) của ES6. Tạo một file `sagas.ts`:
+```javascript
+// export function* là cú pháp của generator function
+export function* helloSaga() {
+  console.log('Hello Sagas!');
+}
+```
+
+### Cách khởi chạy Saga
+Để chạy được Saga trong dự án, chúng ta cần:
+1. Khởi tạo một Saga middleware.
+2. Kết nối Saga middleware đó vào Redux store thông qua `applyMiddleware`.
+3. Chạy Saga đó.
+
+```javascript
+import { createStore, applyMiddleware } from 'redux';
+import createSagaMiddleware from 'redux-saga';
+import { helloSaga } from './sagas';
+
+// Khởi tạo Saga middleware
+const sagaMiddleware = createSagaMiddleware();
+
+// Kết nối vào store
+const store = createStore(
+  reducer,
+  applyMiddleware(sagaMiddleware)
+);
+
+// Bắt đầu chạy saga
+sagaMiddleware.run(helloSaga);
+
+// test action
+const action = type => store.dispatch({ type });
+```
