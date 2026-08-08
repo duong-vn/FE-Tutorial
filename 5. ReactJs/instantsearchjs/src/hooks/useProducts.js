@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import dbData from '../../db.json'
 
 const PRODUCTS_URL = 'http://localhost:3001/products'
 
@@ -20,7 +21,10 @@ export function useProducts() {
         if (!response.ok) throw new Error(`Request failed: ${response.status}`)
         setProducts(await response.json())
       } catch (requestError) {
-        if (requestError.name !== 'AbortError') setError(true)
+        if (requestError.name !== 'AbortError') {
+          console.warn('API call failed, falling back to local mock data.', requestError)
+          setProducts(dbData.products)
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false)
       }
