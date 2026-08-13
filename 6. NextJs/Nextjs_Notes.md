@@ -172,3 +172,473 @@ You can monitor these metrics using tools like Google PageSpeed Insights or by i
 * **LCP (Loading)**: "Does the page load fast?" -> `<Image>`, Font Optimization.
 * **INP (Interactivity)**: "Does the page respond quickly?" -> Code Splitting.
 * **CLS (Stability)**: "Is the layout stable?" -> `<Image>`, Font Optimization.
+
+---
+
+## 9. Styling and CSS in Next.js
+
+### 1. Using CSS Modules
+CSS Modules are a way to write CSS that is locally scoped to a specific component. When you import a CSS Module file, Next.js automatically generates unique classnames, which helps you avoid class name conflicts between different components. This is the built-in and recommended way to handle component-level styling in Next.js. To use it, you just need to name your file with the `[name].module.css` convention.
+
+### 2. Example
+
+#### 1. CSS Module File (`Button.module.css`)
+```css
+/* app/components/Button.module.css */
+.btn {
+  background-color: blue;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+```
+
+#### 2. Using it in a Component (`Button.tsx`)
+```tsx
+// app/components/Button.tsx
+import styles from './Button.module.css';
+
+export default function Button() {
+  return (
+    <button className={styles.btn}>Click me!</button>
+  );
+}
+```
+
+### 3. Integrating Sass/SCSS
+Sass/SCSS is a CSS preprocessor that extends the capabilities of CSS with features like:
+* **Variables**: To store reusable values (colors, font sizes).
+* **Nesting**: Write CSS rules nested within each other, following the HTML structure.
+* **Mixins**: Create reusable blocks of styles.
+* **Partials & Imports**: Split CSS into manageable modules.
+
+**Installation**:
+```bash
+npm install sass
+# or
+yarn add sass
+```
+
+### 4. Sass/SCSS - Example
+```
+app/
+├── styles/
+│   └── _variables.scss  // File for global variables
+└── components/
+    ├── Card.jsx
+    └── Card.module.scss // Using SCSS for the module
+```
+
+`app/styles/_variables.scss`
+```scss
+// Define global variables
+$primary-color: #8a2be2;
+$border-radius: 12px;
+$card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+```
+
+`app/components/Card.module.scss`
+```scss
+// Import variables from the partial file
+@import '../styles/variables';
+
+.card {
+  padding: 1.5rem;
+  border-radius: $border-radius;
+  box-shadow: $card-shadow;
+  background-color: white;
+
+  h3 {
+    margin-top: 0;
+    color: $primary-color;
+  }
+
+  p {
+    color: #555;
+  }
+}
+```
+
+`app/components/Card.jsx`
+```jsx
+// Usage is no different from regular CSS Modules
+import styles from './Card.module.scss';
+
+export default function Card({ title, content }) {
+  return (
+    <div className={styles.card}>
+      <h3>{title}</h3>
+      <p>{content}</p>
+    </div>
+  );
+}
+```
+
+### 5. Styled-components with Server Components
+Styled-components is a CSS-in-JS library that allows you to write CSS directly in your JavaScript/TypeScript files using tagged template literals.
+* **Advantages**: Dynamic styling based on props, automatic scoping, no need to worry about class names.
+
+**Challenge with the App Router**: Styled-components requires a browser runtime environment to inject styles into the DOM. However, Server Components are rendered entirely on the server, where this environment doesn't exist.
+
+**Solution**:
+1. All components using styled-components must be Client Components (marked with `'use client'`).
+2. A Style Registry needs to be created to collect all the styles generated during the server render, and then inject them into the `<head>` of the HTML file sent to the client.
+
+### 6. Styled-components - Installation & Example
+**Install the library**:
+```bash
+npm install styled-components
+```
+
+**Create the file** `app/lib/StyledComponentsRegistry.jsx`:
+```jsx
+'use client'
+
+import React, { useState } from 'react'
+import { useServerInsertedHTML } from 'next/navigation'
+import { ServerStyleSheet, StyleSheetManager } from 'styled-components'
+
+export default function StyledComponentsRegistry({ children }) {
+  const [styledComponentsStyleSheet] = useState(() => new ServerStyleSheet())
+
+  useServerInsertedHTML(() => {
+    const styles = styledComponentsStyleSheet.getStyleElement()
+    styledComponentsStyleSheet.instance.clearTag()
+    return <>{styles}</>
+  })
+
+  if (typeof window !== 'undefined') return <>{children}</>
+
+  return (
+    <StyleSheetManager sheet={styledComponentsStyleSheet.instance}>
+      {children}
+    </StyleSheetManager>
+  )
+}
+```
+
+### 7. Installation & Example (cont.)
+**3. Use the Registry in the Root Layout (`app/layout.jsx`)**:
+```jsx
+import StyledComponentsRegistry from './lib/StyledComponentsRegistry';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
+      </body>
+    </html>
+  );
+}
+```
+
+`app/components/StyledButton.jsx`
+```jsx
+'use client'; // MUST be a Client Component
+
+import styled from 'styled-components';
+
+// Dynamic style based on the 'primary' prop
+const Button = styled.button`
+  background: ${props => props.$primary ? '#BF4F74' : 'white'};
+  color: ${props => props.$primary ? 'white' : '#BF4F74'};
+  font-size: 1em;
+  margin: 1em;
+  padding: 0.5em 1.5em;
+  border: 2px solid #BF4F74;
+  border-radius: 5px;
+  cursor: pointer;
+`;
+
+export default function StyledButton({ primary, children }) {
+  // Note: styled-components recommends using props with a $ prefix
+  // to avoid them being passed down to the DOM element unnecessarily.
+  return <Button $primary={primary}>{children}</Button>
+}
+```
+
+### 8. Tailwind CSS in the App Router
+Tailwind CSS is a utility-first framework. Instead of writing custom CSS, you build interfaces by applying pre-existing utility classes directly in your JSX.
+* **Advantages**: Extremely fast UI development, consistent, easily customizable, and automatically purges unused CSS for production optimization.
+
+**Installation & Configuration**: (According to the official Tailwind documentation)
+1. **Install necessary packages**:
+```bash
+npm install -D tailwindcss postcss autoprefixer
+```
+2. **Initialize configuration files**:
+```bash
+npx tailwindcss init -p
+```
+
+### 9. Adding Custom Tailwind CSS Classes
+To maintain a consistent design system, you'll often need to add custom values (like brand colors, fonts, or animations) to Tailwind. This is done in the `tailwind.config.ts` file.
+
+The best practice is to add your customizations inside the `theme.extend` object. This adds to Tailwind's default theme instead of completely replacing it. Once defined, you can use these classes anywhere in your application.
+
+---
+
+## 10. State Management in Next.js Applications
+
+### 1. Overview - Challenges in Next.js
+In the Next.js App Router, state management is more complex due to the separation between Server and Client.
+* **Server Components**:
+  * Run on the server, are stateless, and cannot use hooks like `useState` or `useEffect`.
+  * Ideal for data fetching and accessing the backend.
+  * Cannot directly interact with client-side state.
+* **Client Components** (`"use client"`):
+  * Behave like traditional React components.
+  * Can use hooks, manage state, and handle events.
+  * All state management libraries (Context, Redux, Zustand) must be used within Client Components.
+* **Hydration**:
+  * The process of 'breathing life' into static server-rendered HTML by attaching JavaScript event listeners and state on the client, making the page interactive.
+  * Synchronizing the initial state between the server and client is crucial to avoid errors.
+
+### 2. React Context & Server Components
+The React Context API is a way to share state between components without having to pass props down through multiple levels (prop drilling).
+* **Pros**:
+  * Built into React, no extra libraries needed.
+  * Easy to learn and use for small to medium-sized applications.
+  * Excellent for state that changes infrequently, like themes (light/dark mode), language, or user information.
+* **Cons**:
+  * Can cause unnecessary re-renders for all consuming components when the state changes.
+  * Not optimized for frequent and complex state updates.
+* **Note in Next.js**:
+  * The Context Provider MUST be placed within a Client Component (`"use client"`).
+
+**Flow**:
+1. RootLayout (Server) renders the ThemeProvider.
+2. ThemeProvider (Client) creates the state and provides it via the Context.
+3. The children (which can be Server or Client Components) are rendered inside the Provider.
+4. Only Client Components within the tree can access the state from the Context (e.g., ThemeToggleButton).
+
+**Example**:
+```jsx
+// contexts/ThemeContext.jsx
+'use client';
+
+import { createContext, useState, useContext } from 'react';
+
+// Create Context
+const ThemeContext = createContext();
+
+// Create Provider Component
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// Create a custom hook for easy consumption
+export function useTheme() {
+  return useContext(ThemeContext);
+}
+```
+
+```jsx
+// app/layout.js
+import { ThemeProvider } from '@/contexts/ThemeContext';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx
+// components/ThemeSwitcher.jsx
+'use client';
+
+import { useTheme } from '@/contexts/ThemeContext';
+
+export default function ThemeSwitcher() {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <button onClick={toggleTheme} className={`p-2 rounded ${theme === 'light' ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}>
+      Switch to {theme === 'light' ? 'Dark' : 'Light'} Mode
+    </button>
+  );
+}
+```
+
+### 3. Redux Toolkit & App Router
+Redux Toolkit (RTK) is the official, recommended toolset for writing Redux logic. It simplifies store setup and reducer creation.
+* **Pros**:
+  * Centralized, predictable state management.
+  * Powerful ecosystem (DevTools, middleware like Redux Thunk/Saga).
+  * Performance optimizations with reselect and Immer.
+  * Suitable for large, complex applications with a lot of global state.
+* **Cons**:
+  * Still has some boilerplate (though significantly reduced by RTK).
+  * Steeper learning curve compared to other solutions.
+* **Note in Next.js**: Similar to Context, the Redux store only exists on the client side. The Provider must also be placed in a Client Component.
+
+**Flow**:
+1. The store is created once on the client side.
+2. The `StoreProvider` (Client) provides this store to the component tree.
+3. Child Client Components can interact with the store using the `useDispatch` and `useSelector` hooks.
+
+```
+(Server) RootLayout
+└── (Client) "use client" <StoreProvider>
+    └── (Server) {children} - (e.g., DashboardPage)
+        └── (Client) "use client" <CounterComponent />
+```
+
+**1. Installation**:
+```bash
+npm install @reduxjs/toolkit react-redux
+```
+
+**2. Create a Slice (`/lib/features/counter/counterSlice.js`)**:
+```javascript
+import { createSlice } from '@reduxjs/toolkit';
+
+const initialState = { value: 0 };
+
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState,
+  reducers: {
+    increment: (state) => {
+      state.value += 1;
+    },
+    decrement: (state) => {
+      state.value -= 1;
+    },
+  },
+});
+
+export const { increment, decrement } = counterSlice.actions;
+export default counterSlice.reducer;
+```
+
+**3. Create the Store (`/lib/store.js`)**:
+```javascript
+import { configureStore } from '@reduxjs/toolkit';
+import counterReducer from './features/counter/counterSlice';
+
+export const makeStore = () => {
+  return configureStore({
+    reducer: {
+      counter: counterReducer,
+    },
+  });
+};
+```
+
+**4. Create the Provider (`/app/StoreProvider.jsx`)**:
+```jsx
+'use client';
+
+import { useRef } from 'react';
+import { Provider } from 'react-redux';
+import { makeStore } from '../lib/store';
+
+export default function StoreProvider({ children }) {
+  const storeRef = useRef(null);
+  if (!storeRef.current) {
+    // Create a new store instance the first time this renders
+    storeRef.current = makeStore();
+  }
+
+  return <Provider store={storeRef.current}>{children}</Provider>;
+}
+```
+
+**5. Use in `layout.js` and a component**:
+```jsx
+// app/layout.js
+import StoreProvider from './StoreProvider';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <StoreProvider>{children}</StoreProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx
+// components/Counter.js
+'use client';
+import { useSelector, useDispatch } from 'react-redux';
+import { increment, decrement } from '@/lib/features/counter/counterSlice';
+
+export function Counter() {
+  const count = useSelector((state) => state.counter.value);
+  const dispatch = useDispatch();
+
+  return (
+    <div>
+      <button onClick={() => dispatch(decrement())}>-</button>
+      <span>{count}</span>
+      <button onClick={() => dispatch(increment())}>+</button>
+    </div>
+  );
+}
+```
+
+### 4. Recoil & Zustand
+These are modern, minimalist, hook-based state management libraries.
+
+**Zustand**
+* **'Zustand'** means 'state' in German.
+* Extremely simple with minimal boilerplate.
+* State is stored in a store outside of React, accessed via hooks.
+* No need to wrap the application in a Provider.
+* **Best for**: Projects of all sizes that need a lightweight, easy-to-use solution.
+
+**Recoil**
+* Developed by Facebook.
+* Uses the concepts of 'atoms' (individual units of state) and 'selectors' (derived state).
+* Allows for better re-render optimization as components subscribe only to the atoms they need.
+* **Best for**: Complex applications that need to efficiently manage interdependent states. Requires a Provider (`RecoilRoot`).
+
+**Persist State**
+The fundamental problem that state persistence solves is the temporary nature of state held in memory. By default, when you create state with Zustand (or any other state management library), it's stored in the browser's JavaScript memory. This means:
+* When a user reloads the page (F5), all JavaScript memory is wiped clean and re-initialized.
+* When a user closes the tab or browser, that memory is completely destroyed.
+
+As a result, the application's entire state reverts to its initial value. This creates a very poor user experience in many common scenarios, for example:
+* **Shopping Cart**: A customer adds five items to their cart, accidentally reloads the page, and finds their cart is completely empty.
+* **User Preferences**: A user selects dark mode, but when they return to the site later, the interface has reverted to light mode.
+* **Form Data**: A user is filling out a long form, but accidentally closes the tab and has to start all over from scratch.
+
+State persistence is the solution to this problem. It takes state from temporary memory and saves it to a more durable storage location on the user's device.
+
+**Configuring State Persistence with Zustand**:
+1. **Create the Persisted Store**: Use the `persist` middleware and provide a unique name to act as the key in localStorage. This automatically saves and rehydrates your state. (`stores/settingsStore.ts`)
+2. **Handle Hydration in Next.js / SSR**: Delay rendering UI that uses the store until the component has mounted on the client. This prevents a "hydration mismatch" error between the server and client. (`components/ThemeSwitcher.tsx`)
+
+### 5. Handling State Hydration
+Hydration is the process where client-side React takes over the HTML rendered by the server.
+
+**The Problem**: If the initial state on the client does not match what was rendered on the server, React will throw a "Hydration Mismatch" error.
+* **Example**: The server renders a page with a 'light' theme, but the client initializes the theme state as 'dark' (e.g., from localStorage).
+
+**The Solution**: Pass the initial state from a Server Component down to a Client Component as props. The Client Component will use these props to initialize its state, ensuring consistency.
+
+**Correct Hydration Flow Diagram**:
+1. **Server**: ServerComponent fetches data (`initialTodos`).
+2. **Server -> Client**: Pass `initialTodos` via props to ClientComponent.
+3. **Client**: ClientComponent receives `initialTodos` and uses it as the initial value for `useState`. `const [todos, setTodos] = useState(initialTodos)`.
+4. **Result**: The server-rendered HTML and the initial client-side state match. Hydration succeeds!
