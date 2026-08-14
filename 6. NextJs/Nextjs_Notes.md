@@ -642,3 +642,597 @@ Hydration is the process where client-side React takes over the HTML rendered by
 2. **Server -> Client**: Pass `initialTodos` via props to ClientComponent.
 3. **Client**: ClientComponent receives `initialTodos` and uses it as the initial value for `useState`. `const [todos, setTodos] = useState(initialTodos)`.
 4. **Result**: The server-rendered HTML and the initial client-side state match. Hydration succeeds!
+
+---
+
+## 11. Authentication & Authorization
+
+### 1. Overview: Core Concepts
+**Authentication**
+* **What is it?** Answers the question: "Who are you?"
+* **Purpose**: To verify a user's identity, typically via username/password, social accounts, etc.
+* **Example**: Logging into Gmail.
+
+**Authorization**
+* **What is it?** Answers the question: "What are you allowed to do?"
+* **Purpose**: To determine the access rights of an authenticated user.
+* **Example**: Only an admin can access the admin dashboard.
+
+### 2. Setting Up NextAuth.js in the App Router
+NextAuth.js (Auth.js) is the most comprehensive and popular solution for authentication in Next.js.
+**Advantages**:
+* Supports multiple "Providers" (Google, GitHub, credentials...).
+* Easy to set up, minimizing boilerplate code.
+* Automatically manages sessions and secure cookies.
+* Deeply integrated with Next.js (both Pages and App Router).
+
+**Flow**:
+```
+participant User
+participant Client as Browser (Next.js App)
+participant Server as Next.js Server (Route Handler)
+participant Provider as Google/GitHub
+
+User->>Client: 1. Clicks "Sign in with Google"
+Client->>Server: 2. Calls signIn('google')
+Server->>Provider: 3. Redirects to Google sign-in page
+Provider-->>User: 4. Requests authentication
+User->>Provider: 5. Signs in successfully
+Provider-->>Server: 6. Sends back authorization code
+Server->>Provider: 7. Exchanges code for access token
+Server->>Server: 8. Creates session & saves to cookie
+Server-->>Client: 9. Returns session to client
+Client-->>User: 10. Displays "Signed in" status
+```
+
+### 3. Example: Setting up NextAuth.js
+
+**1. Installation**:
+```bash
+npm install next-auth
+```
+
+**2. Create Route Handler**: `app/api/auth/[...nextauth]/route.ts`
+```typescript
+// app/api/auth/[...nextauth]/route.ts
+import NextAuth from "next-auth"
+import GoogleProvider from "next-auth/providers/google"
+import CredentialsProvider from "next-auth/providers/credentials";
+
+const handler = NextAuth({
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    CredentialsProvider({
+      // ... configuration for username/password login
+    })
+  ],
+  pages: { signIn: '/login' }, // Custom sign-in page
+})
+
+export { handler as GET, handler as POST }
+```
+
+**3. Using the Session in a Component**:
+```tsx
+// components/SomeComponent.tsx (Server Component)
+import { auth } from "@/auth" // Assuming auth.ts is the config file
+
+export default async function SomeComponent() {
+  const session = await auth(); // Get session on the server
+  if (session) {
+    return <p>Signed in as {session.user?.email}</p>
+  }
+  return <p>Not signed in</p>
+}
+```
+
+### 4. Building a Custom Auth with Server Actions
+For cases where you want full control over the authentication logic.
+**When to use it?**
+* Proprietary authentication systems, not using OAuth.
+* Need deep integration with an existing database.
+* Don't want to depend on a third-party library.
+
+**Approach**:
+* A login form calls a Server Action.
+* The Server Action handles logic: checks DB, hashes passwords.
+* On success, create a session (e.g., using iron-session) and save it in a secure (httpOnly) cookie.
+
+**Custom Auth Flow with Server Actions**:
+```mermaid
+graph TD
+    A[User submits login form] --> B{Call 'login' Server Action};
+    B --> C[Check username/password in DB];
+    C -- Incorrect --> D[Return error];
+    C -- Correct --> E[Create session data];
+    E --> F[Encrypt session & create httpOnly cookie];
+    F --> G[Set cookie in browser];
+    G --> H[Redirect to dashboard];
+```
+
+**Example: Custom Auth with Server Actions**
+Use a library like `jose` to create a JWT or `iron-session` to encrypt the cookie.
+
+```typescript
+// app/login/actions.ts
+'use server'
+
+import { sealData } from 'iron-session/edge';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+export async function login(formData: FormData) {
+  const email = formData.get('email');
+  // 1. Get user from DB
+  // const user = await getUserByEmail(email);
+
+  // 2. Verify password (e.g., using bcrypt.compare)
+  // const isValid = await compare(password, user.password);
+
+  // Assume successful authentication
+  const user = { id: 1, email, isAdmin: true };
+
+  // 3. Create a secure session
+  const session = await sealData(user, {
+    password: process.env.SECRET_COOKIE_PASSWORD!,
+  });
+
+  // 4. Set the cookie
+  cookies().set('session', session, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+    path: '/',
+  });
+
+  // 5. Redirect
+  redirect('/dashboard');
+}
+```
+
+### 5. Implementing JWT Authentication & Secure APIs
+* **JWT (JSON Web Token)** is an encoded JSON string used to securely exchange information between parties.
+* **Structure**: Header, Payload (data), Signature. The signature ensures the token hasn't been tampered with.
+* **Application**: Ideal for protecting API Routes or Route Handlers in Next.js. The client sends the JWT with each request to prove it's authenticated.
+
+**API Security Flow with JWT**:
+```
+participant Client
+participant API as Next.js API Route
+participant AuthServer as Server (Login)
+
+Client->>AuthServer: 1. Login (username, password)
+AuthServer-->>Client: 2. Returns JWT
+Client->>Client: 3. Store JWT (localStorage/cookie)
+
+loop For each request to a protected API
+    Client->>API: 4. Send request + JWT in Header (Authorization: Bearer <token>)
+    API->>API: 5. Verify JWT signature
+    alt Signature valid
+        API-->>Client: 6a. Return data successfully
+    else Signature invalid/expired
+        API-->>Client: 6b. Return 401 Unauthorized error
+    end
+end
+```
+
+**Example: Protecting an API Route Handler**:
+```typescript
+// app/api/secure-data/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
+
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get('authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    // Verify the token
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    console.log('JWT Payload:', payload);
+
+    // Logic to execute when the token is valid
+    return NextResponse.json({
+      data: `Secret data for user ID: ${payload.sub}`,
+    });
+  } catch (error) {
+    // Token is invalid or has expired
+    return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+  }
+}
+```
+
+### 6. Role-Based Access Control (RBAC)
+RBAC is a method of restricting system access for authenticated users based on their roles (e.g., admin, editor, user).
+How to implement in Next.js:
+* **Middleware (`middleware.ts`)**: Acts as a "gatekeeper". It runs before a request is processed. Ideal for checking roles and redirecting if unauthorized.
+* **Layouts**: Apply to a group of routes. Can be used to wrap pages that require specific permissions, show different UIs, or check permissions at the layout level.
+
+**Authorization Flow with Middleware**:
+```mermaid
+graph TD
+    A[Request to a route, e.g., /admin] --> B{Middleware runs};
+    B --> C[Get session/token from cookie];
+    C -- No session --> D[Redirect to /login];
+    C -- Has session --> E[Read role from session];
+    E -- Role != 'admin' --> F[Redirect to home / or error page];
+    E -- Role == 'admin' --> G[Allow request to proceed];
+    G --> H[Render /admin page];
+```
+
+**Example: Authorization with Middleware**:
+```typescript
+// middleware.ts (place in the root directory)
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getIronSession } from 'iron-session/edge';
+
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const session = await getIronSession(req, res, {
+    cookieName: 'session',
+    password: process.env.SECRET_COOKIE_PASSWORD!,
+  });
+
+  const { user } = session;
+
+  // If accessing an admin page but is not an admin
+  if (req.nextUrl.pathname.startsWith('/admin') && user?.isAdmin !== true) {
+    return NextResponse.redirect(new URL('/', req.url)); // Redirect to home page
+  }
+
+  // If not logged in but accessing a protected page
+  if (req.nextUrl.pathname.startsWith('/dashboard') && !user) {
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  return res;
+}
+
+export const config = {
+  matcher: ['/admin/:path*', '/dashboard/:path*'], // Routes to apply the middleware to
+};
+```
+
+---
+
+## 12. Testing Next.js Applications
+
+### 1. Introduction & Objectives
+**Why is Testing Important?**
+* **Ensure Quality**: Detect bugs early, before they reach the user.
+* **Increase Confidence**: Be more confident when refactoring code or adding new features.
+* **Living Documentation**: Tests act as documentation describing how the code works.
+* **Improve Architecture**: Writing testable code often leads to better application architecture.
+
+**Agenda**
+1. Unit Testing: With Jest for Server & Client Components.
+2. Integration Testing: With React Testing Library.
+3. End-to-End Testing: Using Cypress.
+4. Testing the Backend: API Routes & Server Actions.
+
+### 2. The Testing Pyramid
+The Testing Pyramid is a model that helps visualize different levels of testing and their recommended proportions.
+**Visual**: Imagine a pyramid with three levels.
+* **Bottom (Widest)**: Unit Tests (Most numerous, fast, cheap)
+* **Middle**: Integration Tests
+* **Top (Smallest)**: End-to-End (E2E) Tests (Fewest, slow, expensive)
+
+* **Unit Tests** (Most numerous): Test the smallest units of code (functions, components) in isolation. Very fast and low cost.
+* **Integration Tests** (Moderate amount): Test the interaction between multiple units.
+* **E2E Tests** (Fewest): Test the entire application flow from start to finish, simulating real user behavior. Slow and high cost.
+
+### 3. Unit Testing with Jest
+* **Objective**: Test a component or function individually, isolated from other parts of the application.
+* **Tools**:
+  * **Jest**: A powerful and easy-to-set-up JavaScript testing framework.
+  * **React Testing Library (RTL)**: Provides utilities to render components and interact with them the way a user would.
+
+**Unit Test Workflow**
+`Test File` → `Jest Runner` → `Render Component` → `Simulate Interaction` → `Assert Result`
+
+#### 3.1. Unit Testing - Client Component Example
+
+**Component to test (`Counter.tsx`)**:
+```tsx
+'use client';
+import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+**Test File (`Counter.test.tsx`)**:
+```tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import Counter from './Counter';
+
+describe('Counter Component', () => {
+  it('should render initial count and increment on click', () => {
+    // 1. Render component
+    render(<Counter />);
+
+    // 2. Find elements on the DOM
+    const countElement = screen.getByText(/Count: 0/i);
+    const button = screen.getByRole('button', { name: /Increment/i });
+
+    // 3. Assertion: Check the initial state
+    expect(countElement).toBeInTheDocument();
+
+    // 4. Action: Simulate a user click event
+    fireEvent.click(button);
+  });
+});
+```
+
+#### 3.2. Unit Testing - Server Component Example
+
+**Component to test (`UserProfile.tsx`)**:
+```tsx
+// Server Component without 'use client'
+type User = { id: number; name: string; email: string };
+
+export default async function UserProfile({ userId }: { userId: number }) {
+  // Assume this function fetches data from an API
+  const fetchUser = async (id: number): Promise<User> => {
+    return { id, name: 'Leanne Graham', email: 'Sincere@april.biz' };
+  };
+
+  const user = await fetchUser(userId);
+
+  return (
+    <div>
+      <h1>{user.name}</h1>
+      <p>{user.email}</p>
+    </div>
+  );
+}
+```
+
+**Test File (`UserProfile.test.tsx`)**:
+*Note: We are not testing the data fetching, only that the UI renders correctly with the provided data.*
+```tsx
+import { render, screen } from '@testing-library/react';
+// Server component needs to be rendered in the test environment
+import UserProfile from './UserProfile';
+
+// TypeScript will error because we are passing an async component to render.
+// To solve this, we can use a small trick.
+const Resolved = async ({ children }: { children: React.ReactNode }) => await children;
+
+describe('UserProfile Server Component', () => {
+  it('renders user data correctly', async () => {
+    // Render the async component
+    render(<Resolved><UserProfile userId={1} /></Resolved>);
+
+    // Wait and find the elements
+    const nameElement = await screen.findByRole('heading', { name: /Leanne Graham/i });
+    const emailElement = await screen.findByText(/Sincere@april.biz/i);
+
+    // Assertion
+    expect(nameElement).toBeInTheDocument();
+    expect(emailElement).toBeInTheDocument();
+  });
+});
+```
+
+### 4. Integration Testing with React Testing Library
+**Objective**: Test how multiple components work together as a complete functional block. For example: a form and the success message after submission.
+**Tools**: Still Jest and React Testing Library.
+**Difference from Unit Test**: Instead of rendering a single component, we render a group of components (often an entire page) and test the interaction flow between them.
+
+**Integration Test Workflow**
+`Test File` → `Render Page (with multiple components)` → `Simulate User Flow` → `Assert Final State`
+
+#### 4.1 Integration Testing - Example
+
+**Components to test (`NewsletterForm.tsx` and `page.tsx`)**:
+```tsx
+// NewsletterForm.tsx
+'use client';
+
+export default function NewsletterForm({ setSuccess }: { setSuccess: (success: boolean) => void }) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccess(true);
+  };
+  return (
+    <form onSubmit={handleSubmit}>
+      <input type="email" placeholder="Enter your email" required />
+      <button type="submit">Subscribe</button>
+    </form>
+  );
+}
+```
+
+```tsx
+// page.tsx
+'use client';
+import { useState } from 'react';
+import NewsletterForm from './NewsletterForm';
+
+export default function Home() {
+  const [success, setSuccess] = useState(false);
+  return (
+    <main>
+      <h1>Join our Newsletter</h1>
+      {success ? (
+        <p>Thank you for subscribing!</p>
+      ) : (
+        <NewsletterForm setSuccess={setSuccess} />
+      )}
+    </main>
+  );
+}
+```
+
+**Test File (`Home.test.tsx`)**:
+```tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import Home from './page';
+
+describe('Newsletter Subscription Flow', () => {
+  it('shows a success message after form submission', () => {
+    render(<Home />);
+
+    // Find the input and button
+    const emailInput = screen.getByPlaceholderText(/enter your email/i);
+    const subscribeButton = screen.getByRole('button', { name: /subscribe/i });
+
+    // Fill the form and submit
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.click(subscribeButton);
+
+    // Check that the success message appears
+    const successMessage = screen.getByText(/Thank you for subscribing!/i);
+    expect(successMessage).toBeInTheDocument();
+
+    // (Optional) Check that the form has disappeared
+    expect(emailInput).not.toBeInTheDocument();
+  });
+});
+```
+
+### 5. End-to-End (E2E) Testing with Cypress
+* **Objective**: Simulate a real user, testing the entire application from the user interface (frontend) to the server (backend) in a real browser.
+* **Tool**: Cypress.
+* **Advantages**: Comprehensively tests the most critical flows (registration, payment, etc.). Ensures all parts of the system work well together.
+
+**E2E Test Workflow**
+`Cypress Runner` → `Controls Real Browser` → `Visits Page` → `Clicks, Types, Interacts` → `Asserts Content on Page`
+
+#### 5.1 E2E Testing - Example
+```typescript
+// cypress/e2e/navigation.cy.ts
+
+describe('Page Navigation', () => {
+  it('should navigate from home to the about page', () => {
+    // 1. Start from the home page
+    cy.visit('http://localhost:3000/');
+
+    // 2. Find a link with an href containing 'about' and click it
+    cy.get('a[href*="about"]').click();
+
+    // 3. The new URL should include '/about'
+    cy.url().should('include', '/about');
+
+    // 4. The new page should have an h1 heading containing "About Us"
+    cy.get('h1').contains('About Us');
+  });
+});
+```
+**How to run**:
+1. Start the Next.js dev server: `npm run dev`
+2. Open Cypress: `npx cypress open`
+3. Select the test file and watch it run live in the browser.
+
+### 6. Testing API Routes & Server Actions
+* **Objective**: Test the backend logic of Next.js without going through the UI.
+* **Methods**:
+  * **API Routes**: Directly call the handler function with mocked `req` and `res` objects.
+  * **Server Actions**: Since they are just async functions, we can import and call them directly in the test.
+* **Tools**: Jest and the `node-mocks-http` library to mock requests/responses.
+
+**API Route Test Workflow**
+`Test File` → `Calls API Handler` → `Provide Mock Request` → `Assert Mock Response (status, body)`
+
+#### Testing - API Route Example
+
+**API Route to test (`/api/hello/route.ts`)**:
+```typescript
+// app/api/hello/route.ts
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  return NextResponse.json({ message: 'Hello, World!' });
+}
+```
+
+**Test File (`hello.test.ts`)**:
+```typescript
+import { GET } from '@/app/api/hello/route';
+import { NextRequest } from 'next/server';
+
+describe('API Route: /api/hello', () => {
+  it('should return a hello world message', async () => {
+    // Mock a simple NextRequest
+    const request = new NextRequest('http://localhost/api/hello');
+
+    // Call the handler function
+    const response = await GET(request);
+
+    // Get the JSON data from the response
+    const body = await response.json();
+
+    // Assertion
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ message: 'Hello, World!' });
+  });
+});
+```
+
+#### Testing - Server Action Example
+
+**Server Action to test (`actions.ts`)**:
+```typescript
+'use server';
+
+// Assume this is a function that interacts with a database
+const db = {
+  items: [] as string[],
+  addItem: async (item: string) => {
+    db.items.push(item);
+    return { success: true };
+  },
+};
+
+export async function createItem(formData: FormData) {
+  const item = formData.get('item')?.toString();
+
+  if (!item) {
+    return { success: false, error: 'Item is required' };
+  }
+
+  return await db.addItem(item);
+}
+```
+
+**Test File (`actions.test.ts`)**:
+```typescript
+import { createItem } from './actions';
+
+describe('Server Action: createItem', () => {
+  it('should return an error if item is missing', async () => {
+    const formData = new FormData(); // Empty FormData
+    const result = await createItem(formData);
+
+    expect(result).toEqual({ success: false, error: 'Item is required' });
+  });
+
+  it('should add an item successfully', async () => {
+    const formData = new FormData();
+    formData.append('item', 'New Test Item');
+
+    const result = await createItem(formData);
+
+    expect(result).toEqual({ success: true });
+  });
+});
+```
