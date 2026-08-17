@@ -1236,3 +1236,264 @@ describe('Server Action: createItem', () => {
   });
 });
 ```
+
+---
+
+## 13. Deploying & Hosting Next.js Applications
+
+### 1. Deploying App Router Projects to Vercel
+
+#### What is Vercel?
+* **Vercel** is the cloud platform created by the creators and maintainers of Next.js.
+* It provides managed infrastructure that is purpose-built and perfectly optimized for Next.js applications.
+
+#### Why Choose Vercel?
+* **Zero-Configuration**: No complex setup needed; Vercel automatically detects, builds, and configures Next.js projects.
+* **Performance Optimization**: Automatically applies industry best practices (Global Edge Network / CDN, smart caching, automatic image optimization).
+* **Full App Router Support**: Built-in, first-class support for latest features such as Server Components, Server Actions, Route Handlers, and Streaming.
+* **Seamless Git Integration**: Automatically triggers CI/CD builds and deployments every time you push code to GitHub, GitLab, or Bitbucket.
+
+#### 1.1 Vercel Deployment Process Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dev as Developer
+    participant Git as Git Repo (GitHub/GitLab)
+    participant Vercel as Vercel Platform
+    actor User as End-User
+
+    Dev->>Git: 1. Writes code locally & git push to repository
+    Git-->>Vercel: 2. Webhook triggers push event
+    Vercel->>Vercel: 3. Pull latest code & Run `next build`
+    Vercel->>Vercel: 4. Deploy build artifacts to Global Edge CDN
+    User->>Vercel: 5. Access website from nearest edge location (Fastest latency)
+```
+
+**Deployment Flow**:
+`Developer (Writes code & git push)` → `GitHub (Triggers Webhook)` → `Vercel (Builds with next build)` → `Global CDN (Deploys)` → `End-User (Fastest access)`
+
+#### 1.2 Steps to Deploy on Vercel (Step-by-Step Guide)
+1. **Push code to a Git Provider**:
+   * Ensure your Next.js project is pushed to a remote repository on **GitHub**, **GitLab**, or **Bitbucket**.
+2. **Sign up / Log in to Vercel**:
+   * Go to [vercel.com](https://vercel.com) and log in with your Git provider account.
+3. **Import Project**:
+   * From the Vercel dashboard, select **"Add New... -> Project"**.
+   * Choose your Next.js repository and click **"Import"**.
+4. **Configure (Optional)**:
+   * Vercel auto-detects the framework (Next.js), build command (`next build`), and output directory.
+   * Add **Environment Variables** if needed (e.g., `DATABASE_URL`, `API_KEY`, `NEXT_PUBLIC_API_URL`).
+5. **Deploy**:
+   * Click the **"Deploy"** button. Vercel will start the build and deployment process.
+   * After a few minutes, your application will have a public URL and be live!
+
+---
+
+### 2. CI/CD with Netlify and Other Platforms
+
+#### What is CI/CD?
+* **Continuous Integration (CI)**: Frequently merging new code into the main branch. Each integration is verified by an automated build and test run.
+* **Continuous Deployment (CD)**: Automatically deploying every change that passes the CI stage to the production environment.
+
+#### Why Use CI/CD?
+* **Minimize Human Error**: Eliminates manual deployment mistakes.
+* **Increase Release Velocity**: Speeds up product releases with predictable cycles.
+* **Consistent and Reliable Process**: Standardized testing and deployment pipeline.
+* **Popular Platforms**: Netlify, AWS Amplify, Google Firebase Hosting, Azure Static Web Apps, Render.
+
+#### 2.1 CI/CD Process Diagram with Netlify
+
+```mermaid
+graph TD
+    A[Developer pushes code / creates PR] --> B{Action Type}
+    B -->|1. Push to main branch| C[Triggers Deploy to Production]
+    C --> D[Run next build & Deploy live site]
+    B -->|2. Create Pull Request| E[Triggers Deploy Preview]
+    E --> F[Create isolated Preview URL for testing & review]
+```
+
+1. **Push to `main` branch**:
+   * A developer pushes code to the main branch → Triggers **Deploy to Production**.
+2. **Create Pull Request (PR)**:
+   * A developer creates a Pull Request for code review → Triggers **Deploy Preview**. Netlify/Vercel creates a preview version of the site with the changes from that PR (extremely useful for testing before merging).
+
+#### 2.2 Example: Configuration for Netlify Deployment
+
+1. **Connect similarly to Vercel**: Log in to Netlify with your Git account and import your repository.
+2. **Configure Build**:
+   * **Build command**: `next build`
+   * **Publish directory**: `.next`
+3. **Use the `netlify.toml` configuration file (Recommended)**:
+   * Create a `netlify.toml` file in your project's root directory to manage the build configuration explicitly.
+
+**`netlify.toml` Configuration**:
+```toml
+# netlify.toml
+
+[build]
+  # Command to build the project
+  command = "next build"
+
+  # Directory containing the build output for Netlify to deploy.
+  # For standalone Next.js, this is the default directory.
+  publish = ".next"
+
+[build.environment]
+  # Environment variables needed for the build process
+  # NEXT_PUBLIC_API_URL = "https://api.example.com"
+
+# Configuration for Netlify's Next.js plugin to handle SSR, ISR...
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+```
+
+---
+
+### 3. Containerizing with Docker
+
+#### What is Docker?
+* **Docker** is a platform that allows you to package an application and its dependencies into a **"container"**.
+
+#### What is a Container?
+* An independent, lightweight software unit that contains everything needed to run an application: code, runtime (Node.js), system libraries, settings, etc.
+
+#### Why Use Docker for Next.js?
+* **Consistency**: The application runs identically on a developer's machine, staging server, and in production.
+* **Portability**: Easily move the application between cloud providers (AWS, Google Cloud, Azure, DigitalOcean).
+* **Isolation**: Run multiple applications on the same server without conflicts.
+* **Scalability**: Easily replicate containers to handle high traffic (e.g., with Kubernetes).
+
+#### 3.1 Docker Container Architecture Diagram
+
+```text
++-------------------------------------------------------------+
+|                     Your Server / Cloud VM                  |
+|  +-------------------------------------------------------+  |
+|  |                       Docker Engine                   |  |
+|  |  +-------------------------------------------------+  |  |
+|  |  |                 My Next.js Container            |  |  |
+|  |  |  +-------------------------------------------+  |  |  |
+|  |  |  | - Next.js Application (.next)             |  |  |  |
+|  |  |  | - Node.js Runtime                         |  |  |  |
+|  |  |  | - Production Dependencies (node_modules)  |  |  |  |
+|  |  |  | - OS Libraries (from base image)          |  |  |  |
+|  |  |  +-------------------------------------------+  |  |  |
+|  |  +-------------------------------------------------+  |  |
+|  +-------------------------------------------------------+  |
++-------------------------------------------------------------+
+```
+
+#### 3.2 Example: Writing a Multi-Stage Dockerfile
+
+```dockerfile
+# Dockerfile
+
+# --- Stage 1: Build ---
+# Use a full Node.js image to build the application
+FROM node:18-alpine AS builder
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Copy the entire application source code
+COPY . .
+
+# Build the Next.js application
+RUN npm run build
+
+# --- Stage 2: Production ---
+# Use a lightweight Node.js image for the production environment
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+# Install only production dependencies to reduce image size
+COPY --from=builder /app/package*.json ./
+RUN npm install --omit=dev
+
+# Copy the build result from the 'builder' stage
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+# Expose port 3000 to be accessible from the outside
+EXPOSE 3000
+
+# Command to start the application
+CMD ["npm", "start"]
+```
+
+#### 3.3 Running the Docker Container
+
+1. **Build image**:
+   ```bash
+   docker build -t my-nextjs-app .
+   ```
+2. **Run container**:
+   ```bash
+   docker run -p 3000:3000 my-nextjs-app
+   ```
+
+---
+
+### 4. Serverless and Edge Functions
+
+#### What is Serverless?
+* A cloud development model where the service provider (Vercel, AWS) automatically manages the provisioning and scaling of server resources.
+* You just write and deploy code (functions), without worrying about server infrastructure.
+* **Example in Next.js**: Route Handlers (API Routes) and Server Actions are often deployed as Serverless Functions.
+
+#### What are Edge Functions?
+* Serverless Functions deployed on a global content delivery network (CDN), as close to the end-users as possible.
+* **Purpose**: To reduce latency by processing logic at the "edge" of the network.
+* **Example in Next.js**: **Middleware** is the most typical example of an Edge Function.
+
+#### 4.1 Serverless vs. Edge Functions Comparison
+
+* **Traditional / Serverless (Centralized)**:
+  * `User (Vietnam)` → Request → `Server (US-West)` → Response → `User (Vietnam)`
+  * *Result*: High latency due to geographical distance.
+* **Edge Functions (Distributed)**:
+  * `User (Vietnam)` → Request → `Edge Node (Singapore)` → Response → `User (Vietnam)`
+  * *Result*: Very low latency because code executes at a location near the user.
+
+| Feature | Serverless Functions | Edge Functions |
+| :--- | :--- | :--- |
+| **Location** | Centralized regional servers (e.g., US-West) | Global Edge Network Nodes (nearest PoP) |
+| **Latency** | Medium / High (dependent on geography) | Minimal / Ultra-low latency |
+| **Environment** | Full Node.js runtime | Lightweight Edge runtime (e.g. V8 isolate) |
+| **Typical Use Cases** | Heavy database queries, complex business logic | Middleware, Auth checks, Geolocation routing, A/B Testing |
+
+#### 4.2 Example: Next.js Middleware as an Edge Function
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+// Get location information from the request
+// Vercel provides this information automatically
+export function middleware(request: NextRequest) {
+  const { geo } = request;
+  const country = geo?.country || 'N/A';
+
+  // If the user is accessing from country 'XX', show a blocked page
+  if (country === 'XX') {
+    return new NextResponse('Access denied from your country.', { status: 403 });
+  }
+
+  // Allow other requests to pass through
+  return NextResponse.next();
+}
+
+// Configure the middleware to run only on desired paths
+export const config = {
+  matcher: '/admin/:path*',
+};
+```
