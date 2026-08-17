@@ -1497,3 +1497,1396 @@ export const config = {
   matcher: '/admin/:path*',
 };
 ```
+
+---
+
+## 14. Scalability Patterns & Best Practices
+
+### 1. Scalability Overview
+* **Scalability** is the capability of a system to handle a growing volume of traffic, requests, or data by adding resources without degrading performance.
+* **Goal**: Maintain or improve throughput, response times, and system reliability as user and data volumes increase.
+
+#### Vertical Scaling vs. Horizontal Scaling
+
+| Feature | Vertical Scaling (Scale Up) | Horizontal Scaling (Scale Out) |
+| :--- | :--- | :--- |
+| **Concept** | Increasing the power of a single server (adding more CPU, RAM, SSD) | Adding more servers/nodes to the system (clustering, distributed nodes) |
+| **Pros** | Simple architecture; no distributed system complexity | Highly flexible, better fault tolerance, virtually unlimited scaling |
+| **Cons** | Hard physical hardware limits, high cost, Single Point of Failure (SPOF) | More complex to manage, load balance, and synchronize data |
+
+```text
+Vertical Scaling (Scale-Up):
+[ 🖥️ Small Server ]  ──(Upgrade CPU/RAM)──>  [ 🖥️ Massive Server (Hardware Limit!) ]
+
+Horizontal Scaling (Scale-Out):
+[ 🖥️ Server 1 ]  ──(Add Nodes)──>  [ 🖥️ Server 1 ] + [ 🖥️ Server 2 ] + [ 🖥️ Server 3 ] ... (Elastic Growth)
+```
+
+---
+
+### 2. Code Organization: Modular Folder Structure
+
+In the Next.js App Router, organizing code by **modules** or **features** (Feature-Driven Architecture) makes the project maintainable, scalable, and easier for large teams to collaborate on.
+
+* **Core Principle**: **Co-location** — files related to a specific feature (UI components, business logic, hooks, types, tests, and API routes/Server Actions) should be placed together in the same directory.
+
+**Example Feature-Based Project Structure**:
+```text
+my-nextjs-app/
+├── app/                      # Routing & Page Layout Layer only
+│   ├── (auth)/
+│   │   ├── login/
+│   │   │   └── page.tsx      # Renders <LoginForm /> from features/auth
+│   │   └── register/
+│   │       └── page.tsx
+│   ├── dashboard/
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   └── layout.tsx
+├── features/                 # Modular Feature Domains
+│   ├── auth/                 # Auth Feature Module
+│   │   ├── components/       # LoginForm.tsx, AuthButton.tsx
+│   │   ├── actions/          # login.action.ts (Server Actions)
+│   │   ├── hooks/            # useAuth.ts
+│   │   ├── types/            # auth.types.ts
+│   │   └── utils/            # auth-helpers.ts
+│   └── products/             # Products Feature Module
+│       ├── components/       # ProductCard.tsx, ProductGrid.tsx
+│       ├── actions/          # getProducts.action.ts
+│       ├── types/            # product.types.ts
+│       └── services/         # product.service.ts
+├── components/ui/            # Shared, reusable atomic UI components (Button, Modal, Input)
+└── lib/                      # Global singletons (db.ts, cache.ts, env.ts)
+```
+
+---
+
+### 3. Reusability: Layouts and Templates
+
+In Next.js App Router, both `layout.tsx` and `template.tsx` wrap pages to provide reusable UI, but they differ significantly in lifecycle and state preservation:
+
+* **Layouts (`layout.tsx`)**:
+  * Shared UI wrappers for multiple pages.
+  * When navigating between pages, the layout **preserves state and does NOT re-render**.
+  * **Best for**: Persistent UI elements like Headers, Navbars, Sidebars, Footers, and persistent state.
+* **Templates (`template.tsx`)**:
+  * Similar to Layouts, but they **create a new instance** for each child page on navigation.
+  * **State is NOT preserved** (DOM elements and React state are reset and re-mounted).
+  * **Best for**: Page enter/exit animations, resetting input/filter state on route change, or triggering page-view tracking inside `useEffect`.
+
+#### 3.1 Layout vs. Template Hierarchy
+
+```tsx
+<Layout>
+  {/* Header, Sidebar, Footer (Does not re-render, preserves state) */}
+  <Template key={route}>
+    {children} {/* Page component (Re-renders & re-mounts on navigation) */}
+  </Template>
+</Layout>
+```
+
+#### 3.2 Layout Example (`/app/dashboard/layout.tsx`)
+
+```tsx
+// /app/dashboard/layout.tsx
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      {/* This sidebar will not re-render when navigating between child pages */}
+      <nav>Dashboard Sidebar</nav>
+      {children}
+    </section>
+  );
+}
+```
+
+---
+
+### 4. Architecture: Microservices and API Gateways
+
+* **Microservices**: Break down a large monolithic application into smaller, independent services. Each service manages a specific business domain (e.g., users, products, orders, payments).
+  * **Benefits**: Easier to develop, deploy independently, flexible technology choices per service, and improved fault tolerance (if one service fails, others remain operational).
+* **API Gateway**: Acts as a single entry point (reverse proxy) for all client requests, routing traffic to the appropriate microservices.
+  * **Key Responsibilities**: Authentication & Authorization, Rate Limiting, Request Routing, Logging/Monitoring, and SSL Termination.
+
+#### 4.1 Architecture Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as User / Frontend (Next.js)
+    participant Gateway as API Gateway
+    participant UserSvc as User Service
+    participant UserDB as User Database
+
+    Client->>Gateway: 1. Request: https://my-app.com/api/users/1
+    Gateway->>Gateway: 2. Authenticate token & check rate limit
+    Gateway->>UserSvc: 3. Route request to User Service
+    UserSvc->>UserDB: 4. Query DB for user data
+    UserDB-->>UserSvc: 5. Return user record
+    UserSvc-->>Gateway: 6. Return response
+    Gateway-->>Client: 7. Send final JSON response back to user
+```
+
+---
+
+### 5. Performance: CDN and Caching Strategies
+
+* **CDN (Content Delivery Network)**: A network of servers distributed globally. It caches copies of your static assets (images, JavaScript, CSS, pre-rendered HTML).
+  * When a user makes a request, the CDN serves the assets from the edge server closest to them, minimizing latency and drastically improving page load times.
+
+#### 5.1 Caching Strategies
+
+```mermaid
+graph TD
+    A[User Request] -->|1. Check| B[Browser Cache (Local Machine)]
+    B -->|Miss| C[CDN / Edge Cache (Global PoPs)]
+    C -->|Miss| D[Server-Side / App Cache (Redis / In-Memory)]
+    D -->|Miss| E[Primary Database]
+```
+
+* **Browser Cache**: Stored directly on the user's machine (configured via HTTP `Cache-Control` headers).
+* **CDN Cache (Edge Cache)**: The CDN stores assets at edge locations worldwide.
+* **Server-Side Cache (Application Cache)**: Stores the results of expensive operations (DB queries, external API calls) in memory (e.g., Redis, Memcached, or Next.js `unstable_cache`).
+
+#### 5.2 Server-Side Caching with Next.js `unstable_cache`
+
+```typescript
+// In a Next.js Route Handler or Server Component
+import { unstable_cache } from 'next/cache';
+import { db } from '@/lib/db';
+
+const getProducts = unstable_cache(
+  async () => db.product.findMany(), // Expensive database function
+  ['products'], // Cache key
+  { revalidate: 3600 } // Cache expires after 1 hour (3600 seconds)
+);
+```
+
+---
+
+### 6. Database: Scaling Techniques
+
+As traffic grows, the database is often the first bottleneck. Scaling techniques help the database handle higher query throughput and concurrency:
+
+#### 1. Read Replicas (Master-Replica Pattern)
+* Create read-only copies of the primary database.
+* All **WRITE** requests (`INSERT`, `UPDATE`, `DELETE`) go to the Primary DB, while **READ** requests (`SELECT`) are distributed across multiple Read Replicas.
+* Extremely effective for read-heavy applications (blogs, e-commerce, content portals).
+
+```mermaid
+graph TD
+    Client[Next.js Application] -->|WRITE Requests| Primary[(Primary DB - Master)]
+    Primary -->|Asynchronous Replication| Replica1[(Read Replica 1)]
+    Primary -->|Asynchronous Replication| Replica2[(Read Replica 2)]
+    Client -->|READ Requests| Replica1
+    Client -->|READ Requests| Replica2
+```
+
+#### 2. Sharding (Horizontal Partitioning)
+* Horizontally partitioning data across multiple database instances based on a **Shard Key**.
+* **Example**: Shard 1 holds users `A–M`, while Shard 2 holds users `N–Z`.
+
+```mermaid
+graph TD
+    App[Application Router] -->|Shard Key: Users A-M| Shard1[(Database Shard 1)]
+    App -->|Shard Key: Users N-Z| Shard2[(Database Shard 2)]
+```
+
+#### 3. Connection Management & Connection Pooling
+* **The Problem**: Each active DB connection consumes significant server RAM and resources. In serverless environments, hundreds or thousands of instances can spin up in seconds, quickly exceeding database connection limits.
+* **Connection Pooling**: Uses a "pool" of pre-established connections. Instead of opening a new TCP connection for every request, the application "borrows" an existing connection from the pool and returns it immediately after query completion.
+* **Serverless Proxies**: Providers like Neon, Supabase, and tools like Prisma Accelerate / PgBouncer provide built-in connection poolers that prevent the database from being overwhelmed by simultaneous serverless connections.
+
+---
+
+## 15. Internationalization (i18n) & Localization (l10n)
+
+### 1. Setting Up i18n in Next.js App Router
+
+Next.js provides built-in support for i18n routing without requiring heavyweight external routing libraries.
+
+* **Folder Structure**: Utilize a dynamic `[lang]` route segment in the `app/` directory to house all pages.
+* **Middleware (`middleware.ts`)**: Detects the user's preferred language from the browser's `Accept-Language` header and redirects to the appropriate locale-prefixed URL if missing.
+
+#### 1.1 Recommended Directory Structure
+
+```text
+/
+├── /app
+│   └── /[lang]/            # Dynamic locale route segment
+│       ├── layout.tsx      # Root layout handling <html> lang & dir
+│       └── page.tsx        # Localized page component
+├── /dictionaries           # JSON translation files
+│   ├── en.json
+│   └── vi.json
+├── /i18n-config.ts         # Centralized i18n configuration
+└── middleware.ts           # Handles language detection & routing logic
+```
+
+#### 1.2 Centralized Configuration (`i18n-config.ts`)
+
+```typescript
+// i18n-config.ts
+export const i18n = {
+  defaultLocale: 'en',
+  locales: ['en', 'vi', 'ar'],
+} as const;
+
+export type Locale = (typeof i18n)['locales'][number];
+```
+
+#### 1.3 Advanced Middleware with Locale Matching (`middleware.ts`)
+
+Uses `negotiator` and `@formatjs/intl-localematcher` to accurately detect language preferences from request headers.
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { i18n } from './i18n-config';
+import { match as matchLocale } from '@formatjs/intl-localematcher';
+import Negotiator from 'negotiator';
+
+function getLocale(request: NextRequest): string | undefined {
+  const negotiatorHeaders: Record<string, string> = {};
+  request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
+
+  const locales = i18n.locales;
+  const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
+
+  return matchLocale(languages, locales, i18n.defaultLocale);
+}
+
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const pathnameIsMissingLocale = i18n.locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
+
+  // Redirect if there is no locale in the pathname
+  if (pathnameIsMissingLocale) {
+    const locale = getLocale(request);
+    return NextResponse.redirect(
+      new URL(`/${locale}${pathname}`, request.url)
+    );
+  }
+}
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+};
+```
+
+---
+
+### 2. Managing Dynamic Multilingual Content
+
+* **Store text strings in JSON files** (e.g., `/dictionaries/en.json`, `/dictionaries/vi.json`).
+* **Dynamic `import()` for Code-Splitting**: Create a loader function that uses dynamic `import()` to only load the required language file on the server, optimizing bundle size and memory usage.
+
+#### 2.1 Dictionary Loader (`lib/dictionary.ts`)
+
+```typescript
+// lib/dictionary.ts
+import 'server-only';
+import type { Locale } from '@/i18n-config';
+
+// We enumerate all dictionaries here for Next.js to detect them at build time
+const dictionaries = {
+  en: () => import('@/dictionaries/en.json').then((module) => module.default),
+  vi: () => import('@/dictionaries/vi.json').then((module) => module.default),
+  ar: () => import('@/dictionaries/ar.json').then((module) => module.default),
+};
+
+export const getDictionary = async (locale: Locale) => dictionaries[locale]();
+```
+
+#### 2.2 Consuming Translations in Server Components (`app/[lang]/page.tsx`)
+
+```tsx
+// app/[lang]/page.tsx
+import { getDictionary } from '@/lib/dictionary';
+import type { Locale } from '@/i18n-config';
+
+export default async function Home({
+  params: { lang },
+}: {
+  params: { lang: Locale };
+}) {
+  const dict = await getDictionary(lang); // Load dictionary asynchronously on the server
+
+  return (
+    <main>
+      <h1>{dict.home.welcome}</h1>
+      <button>{dict.products.addToCart}</button>
+    </main>
+  );
+}
+```
+
+---
+
+### 3. Implementing Right-to-Left (RTL) Layouts
+
+Languages such as **Arabic (`ar`)** and **Hebrew (`he`)** are read and rendered from right to left.
+
+* **The `dir` Attribute**: Dynamically set the `dir="rtl"` attribute on the `<html>` tag for RTL languages.
+* **CSS Logical Properties**: Use logical CSS properties instead of directional ones so the layout automatically flips for RTL:
+  * Use `margin-inline-start` instead of `margin-left`.
+  * Use `padding-inline-end` instead of `padding-right`.
+  * Use `text-align: start` instead of `text-align: left`.
+
+#### 3.1 RTL Root Layout (`app/[lang]/layout.tsx`)
+
+```tsx
+// app/[lang]/layout.tsx
+export default function RootLayout({
+  children,
+  params: { lang },
+}: {
+  children: React.ReactNode;
+  params: { lang: string };
+}) {
+  return (
+    <html lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+---
+
+### 4. Language Switching & Locale-based Routing
+
+To create a language switcher, we dynamically build links targeting the current path with the new locale prefix.
+
+* **`usePathname` Hook**: Used in Client Components to retrieve the active URL pathname and replace the locale segment.
+
+#### 4.1 Language Switcher Flow
+
+`[User is on /en/products]` → `[Clicks "Tiếng Việt"]` → `[Link points to /vi/products]` → `[Next.js re-renders page with lang="vi"]`
+
+#### 4.2 Language Switcher Component (`LanguageSwitcher.tsx`)
+
+```tsx
+// components/LanguageSwitcher.tsx
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { i18n, type Locale } from '@/i18n-config';
+
+export default function LanguageSwitcher() {
+  const pathName = usePathname();
+
+  // Helper function to replace the locale segment in the current pathname
+  const redirectedPathName = (locale: Locale) => {
+    if (!pathName) return '/';
+    const segments = pathName.split('/');
+    segments[1] = locale;
+    return segments.join('/');
+  };
+
+  return (
+    <ul style={{ display: 'flex', gap: '1rem', listStyle: 'none', padding: 0 }}>
+      {i18n.locales.map((locale) => {
+        const isCurrent = pathName.startsWith(`/${locale}`);
+        return (
+          <li key={locale}>
+            <Link
+              href={redirectedPathName(locale)}
+              style={{
+                fontWeight: isCurrent ? 'bold' : 'normal',
+                textDecoration: isCurrent ? 'underline' : 'none',
+              }}
+            >
+              {locale.toUpperCase()}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+```
+
+---
+
+## 16. Redux with Next.js (App Router)
+
+### 1. When to Use Redux with Next.js App Router?
+
+Redux is powerful but **not always necessary** in modern Next.js. You should consider using Redux when:
+
+1. **Complex and Global State**: You have a large amount of application state shared across many deeply nested or unrelated components without a direct parent-child relationship (e.g., user profile, e-commerce cart, global audio/media player, complex multi-step forms).
+2. **Complicated State Update Logic**: When state transitions involve intricate conditional branches or multi-step logic. Redux enforces clear separation with actions and reducers.
+3. **Middleware is Needed**: When you need centralized handling for asynchronous operations, caching, logging, analytics, or side effects. Redux Toolkit provides `createAsyncThunk` and RTK Query for this.
+4. **Predictable State & Debugging**: You need a strict single source of truth, time-travel debugging, and deep inspection via **Redux DevTools**.
+
+#### 1.1 Decision Tree: Redux with Next.js App Router
+
+```mermaid
+graph TD
+    A[Does your app have complex state?] -->|No| B[Use useState, useReducer, or Context API]
+    A -->|Yes| C{Do you need to share state across many components?}
+    C -->|No| D[Pass props or use Context API]
+    C -->|Yes| E[Consider using Redux Toolkit]
+```
+
+---
+
+### 2. Required Libraries & Installation
+
+To integrate Redux with Next.js App Router, install the official Redux Toolkit and React bindings:
+
+* **`@reduxjs/toolkit`**: The official, opinionated, standard toolset for efficient Redux development.
+* **`react-redux`**: React bindings allowing components to subscribe to the Redux store.
+* **`redux`**: Core Redux library (bundled automatically as a dependency of `@reduxjs/toolkit`).
+
+```bash
+npm install @reduxjs/toolkit react-redux
+```
+
+---
+
+### 3. Suggested Folder Structure
+
+To keep the codebase maintainable and modular, place all Redux-related configuration, store setup, and feature slices into a dedicated directory such as `lib/redux/` or `store/`.
+
+```text
+nextjs-redux-app/
+├── app/
+│   ├── layout.tsx            # Wraps app with <StoreProvider>
+│   └── page.tsx              # Page consuming Redux state
+├── lib/
+│   └── redux/
+│       ├── store.ts          # makeStore() factory & RootState/AppDispatch types
+│       ├── provider.tsx      # Client Component StoreProvider (useRef-based)
+│       ├── hooks.ts          # Typed useAppDispatch & useAppSelector hooks
+│       └── features/
+│           └── counter/
+│               ├── counterSlice.ts
+│               └── counterAPI.ts
+├── package.json
+└── tsconfig.json
+```
+
+---
+
+### 4. Store Configuration using Redux Toolkit
+
+In Next.js App Router, the store **must be created per-request / per-render** using a factory function (`makeStore`) rather than exported as a single global variable. This ensures state is isolated and never leaked across different user requests during Server-Side Rendering (SSR).
+
+#### 4.1 Store Setup (`lib/redux/store.ts`)
+
+```typescript
+// lib/redux/store.ts
+import { configureStore } from '@reduxjs/toolkit';
+import counterReducer from './features/counter/counterSlice';
+// Import other feature reducers here
+
+export const makeStore = () => {
+  return configureStore({
+    reducer: {
+      counter: counterReducer,
+      // Add other reducers here
+    },
+  });
+};
+
+// Infer the type of makeStore
+export type AppStore = ReturnType<typeof makeStore>;
+// Infer the `RootState` and `AppDispatch` types from the store itself
+export type RootState = ReturnType<AppStore['getState']>;
+export type AppDispatch = AppStore['dispatch'];
+```
+
+#### 4.2 Custom Typed Redux Hooks (`lib/redux/hooks.ts`)
+
+```typescript
+// lib/redux/hooks.ts
+import { useDispatch, useSelector, useStore } from 'react-redux';
+import type { TypedUseSelectorHook } from 'react-redux';
+import type { RootState, AppDispatch, AppStore } from './store';
+
+// Use these pre-typed hooks throughout the app instead of plain `useDispatch` and `useSelector`
+export const useAppDispatch: () => AppDispatch = useDispatch;
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+export const useAppStore: () => AppStore = useStore;
+```
+
+---
+
+### 5. Creating Async Slices with `createAsyncThunk`
+
+`createAsyncThunk` simplifies asynchronous operations (e.g., API calls) by automatically generating action creators and dispatching `pending`, `fulfilled`, and `rejected` actions based on promise resolution.
+
+#### 5.1 Async Action Thunk (`lib/redux/features/counter/counterSlice.ts`)
+
+```typescript
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
+
+// Create an async thunk to fetch a random increment amount
+export const fetchIncrementAmount = createAsyncThunk(
+  'counter/fetchIncrementAmount',
+  async (amount: number) => {
+    // Simulate an API request / fetch call
+    const response = await new Promise<{ data: number }>((resolve) =>
+      setTimeout(() => resolve({ data: amount }), 1000)
+    );
+    return response.data;
+  }
+);
+```
+
+---
+
+### 6. Handling Async Thunks in Slices (`extraReducers`)
+
+Inside `createSlice`, use the `extraReducers` builder callback to listen for and update state based on the lifecycle phases of `createAsyncThunk`.
+
+```typescript
+// lib/redux/features/counter/counterSlice.ts (cont.)
+interface CounterState {
+  value: number;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+}
+
+const initialState: CounterState = {
+  value: 0,
+  status: 'idle',
+};
+
+export const counterSlice = createSlice({
+  name: 'counter',
+  initialState,
+  reducers: {
+    // Synchronous reducers
+    increment: (state) => {
+      state.value += 1;
+    },
+    decrement: (state) => {
+      state.value -= 1;
+    },
+    incrementByAmount: (state, action: PayloadAction<number>) => {
+      state.value += action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchIncrementAmount.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchIncrementAmount.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.value += action.payload; // Update state with data from API response
+      })
+      .addCase(fetchIncrementAmount.rejected, (state) => {
+        state.status = 'failed';
+      });
+  },
+});
+
+export const { increment, decrement, incrementByAmount } = counterSlice.actions;
+export default counterSlice.reducer;
+```
+
+---
+
+### 7. Connecting Redux Store to Next.js App Router
+
+Since the App Router is built around **Server Components** by default, we cannot render the React-Redux `<Provider>` directly in the root layout. Instead, we create a dedicated Client Component wrapper (`StoreProvider`) using `useRef` to ensure the store instance is created once per client lifecycle.
+
+#### 7.1 Store Provider Component (`lib/redux/provider.tsx`)
+
+```tsx
+// lib/redux/provider.tsx
+'use client';
+
+import { useRef } from 'react';
+import { Provider } from 'react-redux';
+import { makeStore, AppStore } from './store';
+
+export default function StoreProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const storeRef = useRef<AppStore>();
+  if (!storeRef.current) {
+    // Create the store instance the first time this renders on the client
+    storeRef.current = makeStore();
+  }
+
+  return <Provider store={storeRef.current}>{children}</Provider>;
+}
+```
+
+#### 7.2 Wrapping Root Layout (`app/layout.tsx`)
+
+```tsx
+// app/layout.tsx
+import StoreProvider from '@/lib/redux/provider';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <StoreProvider>{children}</StoreProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+---
+
+### 8. Using Redux in Server and Client Components
+
+* **Client Components**: Can freely use `useAppSelector` and `useAppDispatch` hooks to read from and write to the Redux store.
+* **Server Components**: **Cannot** directly access or interact with the Redux store (because Redux is strictly client-side state).
+
+#### The Pattern: Server Component Data Fetching → Client Component Props
+
+1. Fetch initial data on the server in a **Server Component** (fast, direct DB access, SEO friendly).
+2. Pass data as props into a **Client Component**.
+3. The Client Component uses the data or dispatches an action to initialize/sync the Redux store.
+
+```tsx
+// app/counter/CounterClient.tsx ('use client')
+'use client';
+
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
+import { increment, decrement, fetchIncrementAmount } from '@/lib/redux/features/counter/counterSlice';
+
+export default function CounterClient({ initialCount }: { initialCount: number }) {
+  const count = useAppSelector((state) => state.counter.value);
+  const status = useAppSelector((state) => state.counter.status);
+  const dispatch = useAppDispatch();
+
+  return (
+    <div>
+      <h2>Count: {count} (Initial from Server: {initialCount})</h2>
+      <button onClick={() => dispatch(increment())}>+1</button>
+      <button onClick={() => dispatch(decrement())}>-1</button>
+      <button 
+        onClick={() => dispatch(fetchIncrementAmount(5))} 
+        disabled={status === 'loading'}
+      >
+        {status === 'loading' ? 'Loading...' : 'Add 5 via Async Thunk'}
+      </button>
+    </div>
+  );
+}
+```
+
+```tsx
+// app/counter/page.tsx (Server Component)
+import CounterClient from './CounterClient';
+
+export default async function CounterPage() {
+  // Fetch initial data securely on the server
+  const initialCount = 10; // e.g. await db.counter.get()
+
+  return (
+    <main>
+      <h1>Redux Counter Page</h1>
+      <CounterClient initialCount={initialCount} />
+    </main>
+  );
+}
+```
+
+---
+
+### 9. Using Redux with Server Actions
+
+Server Actions allow client code to invoke server-side operations directly (mutating databases, calling third-party services). Redux seamlessly coordinates state updates following Server Action executions.
+
+#### 9.1 Server Action & Redux Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User Interaction
+    participant Client as Client Component
+    participant Action as Server Action (Server-Side)
+    participant DB as Database
+    participant Redux as Redux Store
+
+    User->>Client: 1. Triggers form submit / button click
+    Client->>Action: 2. Invoke Server Action `updateUserAction(data)`
+    Action->>DB: 3. Perform server-side mutation in Database
+    DB-->>Action: 4. Mutation successful
+    Action-->>Client: 5. Return updated result object
+    Client->>Redux: 6. `dispatch(userUpdated(result))` to update local store
+    Redux-->>Client: 7. UI re-renders with fresh global state
+```
+
+#### 9.2 Example Implementation
+
+**Server Action (`app/actions/user.ts`)**:
+```typescript
+// app/actions/user.ts
+'use server';
+
+export async function updateUserProfile(userId: string, newName: string) {
+  // 1. Logic runs securely on the server (e.g. Prisma / DB mutation)
+  // const updatedUser = await db.user.update(...)
+  const updatedUser = { id: userId, name: newName, updatedAt: new Date().toISOString() };
+
+  // 2. Return data back to caller
+  return { success: true, user: updatedUser };
+}
+```
+
+**Client Component Dispatching to Redux**:
+```tsx
+// components/UserProfileForm.tsx
+'use client';
+
+import { useState } from 'react';
+import { useAppDispatch } from '@/lib/redux/hooks';
+import { updateUserProfile } from '@/app/actions/user';
+import { setUser } from '@/lib/redux/features/user/userSlice';
+
+export default function UserProfileForm({ userId }: { userId: string }) {
+  const [name, setName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const dispatch = useAppDispatch();
+
+  const handleUpdate = async () => {
+    setIsSubmitting(true);
+    // 1. Call Server Action
+    const result = await updateUserProfile(userId, name);
+
+    // 2. Dispatch returned server data to update Redux store
+    if (result.success) {
+      dispatch(setUser(result.user));
+    }
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New Name" />
+      <button onClick={handleUpdate} disabled={isSubmitting}>
+        {isSubmitting ? 'Saving...' : 'Update Profile'}
+      </button>
+    </div>
+  );
+}
+```
+
+---
+
+## 17. SEO Optimization for Next.js
+
+### 1. Managing Metadata and Head Tags
+
+In the Next.js App Router, legacy approaches like `next/head` or `head.tsx` are replaced by the built-in **Metadata API**. You can define SEO metadata either statically using the `metadata` object or dynamically using the `generateMetadata` function exported from a `layout.tsx` or `page.tsx`.
+
+#### Key Benefits:
+* **Server-Side Rendering (SSR)**: Metadata is computed and injected on the server into the initial HTML `<head>`, ensuring web crawlers and social bots (Googlebot, Facebook, Twitter, LinkedIn) see it instantly.
+* **Colocation**: SEO configuration lives directly inside the same file or folder as the page it describes.
+* **Dynamic Generation**: Fetch product, article, or user data directly to generate custom titles, descriptions, and OpenGraph images.
+
+#### 1.1 Static Metadata Example (`app/layout.tsx` or `app/about/page.tsx`)
+
+```typescript
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | My Shop',
+    default: 'My Shop - Premium Products',
+  },
+  description: 'The best e-commerce platform for curated products.',
+  metadataBase: new URL('https://myshop.com'),
+  openGraph: {
+    title: 'My Shop',
+    description: 'The best e-commerce platform for curated products.',
+    url: 'https://myshop.com',
+    siteName: 'My Shop',
+    locale: 'en_US',
+    type: 'website',
+  },
+};
+```
+
+#### 1.2 Dynamic Metadata Example (`app/products/[id]/page.tsx`)
+
+```typescript
+// app/products/[id]/page.tsx
+import { Metadata, ResolvingMetadata } from 'next';
+
+type Props = {
+  params: { id: string };
+};
+
+// Function to generate metadata dynamically based on route parameters & data fetching
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  // Fetch product data
+  const product = await fetch(`https://api.example.com/products/${params.id}`).then((res) =>
+    res.json()
+  );
+
+  return {
+    title: product.name,
+    description: product.description,
+    openGraph: {
+      title: product.name,
+      description: product.description,
+      images: [product.imageUrl],
+    },
+  };
+}
+
+export default function ProductPage({ params }: Props) {
+  // Page component UI
+  return <h1>Product {params.id}</h1>;
+}
+```
+
+---
+
+### 2. Generating Dynamic Sitemaps (`sitemap.ts`)
+
+A **Sitemap** is an XML file listing all discoverable URLs on your website. It allows search engines (like Google and Bing) to crawl and index your site's pages efficiently.
+
+* In Next.js App Router, you can create a dynamic sitemap by placing a `sitemap.ts` file inside the `app/` directory.
+* Next.js automatically runs this function and serves it at `/sitemap.xml`.
+
+#### 2.1 Sitemap Generation Flow
+
+```mermaid
+graph TD
+    A[app/sitemap.ts executes] --> B[Fetch dynamic routes e.g. posts, products from DB/API]
+    B --> C[Generate array of URL metadata objects]
+    C --> D[Next.js compiles and serves /sitemap.xml automatically]
+```
+
+#### 2.2 Example: Dynamic Sitemap File (`app/sitemap.ts`)
+
+```typescript
+// app/sitemap.ts
+import { MetadataRoute } from 'next';
+
+// Define a Post type
+interface Post {
+  id: string;
+  updatedAt: string;
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // 1. Static site routes
+  const staticRoutes: MetadataRoute.Sitemap = [
+    {
+      url: 'https://acme.com',
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1.0,
+    },
+    {
+      url: 'https://acme.com/about',
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+  ];
+
+  // 2. Fetch dynamic routes from backend/database (e.g. blog posts, products)
+  const posts: Post[] = await fetch('https://api.example.com/posts').then((res) =>
+    res.json()
+  );
+
+  const dynamicRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
+    url: `https://acme.com/blog/${post.id}`,
+    lastModified: new Date(post.updatedAt),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
+  return [...staticRoutes, ...dynamicRoutes];
+}
+```
+
+#### 2.3 Companion: Robots File (`app/robots.ts`)
+
+```typescript
+// app/robots.ts
+import { MetadataRoute } from 'next';
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/admin/', '/api/'],
+    },
+    sitemap: 'https://acme.com/sitemap.xml',
+  };
+}
+```
+
+---
+
+### 3. Implementing Structured Data with JSON-LD
+
+**Structured Data (JSON-LD)** is a standardized format (following the [Schema.org](https://schema.org) vocabulary) used to classify page content and provide explicit search intent to web crawlers.
+
+* **Why use JSON-LD?**
+  * Enables **Rich Snippets** in Google Search results (star ratings, reviews, pricing, product availability, event dates, FAQ accordions).
+  * Drastically increases visibility and **Click-Through Rates (CTR)**.
+* **How to implement in Next.js?**
+  * You can render a `<script type="application/ld+json">` tag directly inside your Server Components.
+
+#### 3.1 Product Page with JSON-LD Example (`app/products/[id]/page.tsx`)
+
+```tsx
+// app/products/[id]/page.tsx
+async function getProductData(id: string) {
+  const res = await fetch(`https://api.example.com/products/${id}`);
+  return res.json();
+}
+
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const product = await getProductData(params.id);
+
+  // Define Schema.org Structured Data
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: product.imageUrl,
+    sku: product.sku,
+    brand: {
+      '@type': 'Brand',
+      name: product.brand,
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: product.rating,
+      reviewCount: product.reviewCount,
+    },
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+    },
+  };
+
+  return (
+    <div>
+      {/* Inject JSON-LD into HTML for Search Engine Crawlers */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      {/* Rest of the product page UI */}
+      <main>
+        <h1>{product.name}</h1>
+        <p>{product.description}</p>
+        <p>Price: ${product.price}</p>
+      </main>
+    </div>
+  );
+}
+```
+
+---
+
+## 18. Performance & Optimization
+
+### 1. Code Splitting & Dynamic Import (`next/dynamic`)
+
+**Code Splitting** is an optimization technique that splits your JavaScript bundle into smaller, isolated "chunks" that are loaded on demand rather than all upfront.
+
+* **`next/dynamic`**: A Next.js utility built on top of `React.lazy` and `Suspense` that enables component lazy loading.
+* **Why Use It?**
+  * Prevents large, heavy libraries (e.g., Chart.js, Monaco/Rich-Text Editor, Leaflet Maps, 3D Canvas) from bloating the initial page bundle.
+  * Significantly reduces the initial bundle size and drastically improves **Time to Interactive (TTI)** and **First Contentful Paint (FCP)**.
+
+#### 1.1 Example: Lazy Loading a Heavy Component (`app/dashboard/page.tsx`)
+
+```tsx
+// app/dashboard/page.tsx
+'use client';
+
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// Use next/dynamic to lazy load the HeavyChart component
+const HeavyChart = dynamic(() => import('../components/HeavyChart'), {
+  loading: () => <p>Loading chart...</p>, // Displayed while the component is loading
+  ssr: false, // Disables server-side rendering (renders only on client)
+});
+
+export default function Dashboard() {
+  const [showChart, setShowChart] = useState(false);
+
+  return (
+    <div>
+      <h1>Main Dashboard</h1>
+      <button onClick={() => setShowChart(true)}>Show Revenue Chart</button>
+
+      {/* The HeavyChart component chunk is only fetched & rendered when showChart is true */}
+      {showChart && <HeavyChart />}
+    </div>
+  );
+}
+```
+
+---
+
+### 2. Image Optimization with `next/image`
+
+The `<Image>` component (`next/image`) is a comprehensive, built-in image optimization solution that automates core Web Vitals best practices:
+
+1. **Automatic Resizing**: Dynamically serves correctly sized images matching the user's viewport using responsive `srcset`.
+2. **Format Optimization**: Converts images on the fly to modern, highly compressed formats (such as **AVIF** and **WebP**) if supported by the client browser.
+3. **Lazy Loading by Default**: Off-screen images are only loaded when they near the viewport intersection boundary.
+4. **Layout Shift Prevention**: Automatically prevents Cumulative Layout Shift (CLS) by enforcing aspect ratios or reserved space.
+
+#### 2.1 Example: Using `priority` and `sizes`
+
+```tsx
+// app/page.tsx
+import Image from 'next/image';
+import heroImage from '../public/hero.png';
+
+export default function HomePage() {
+  return (
+    <div>
+      {/* `priority` preloads the image immediately to optimize Largest Contentful Paint (LCP) */}
+      <Image
+        src={heroImage}
+        alt="Main hero banner"
+        priority
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      />
+    </div>
+  );
+}
+```
+
+---
+
+### 3. Font Optimization with `next/font`
+
+`next/font` provides built-in, zero-config font optimization for Google Fonts and local custom fonts:
+
+* **Automatic Self-Hosting**: Downloads Google Fonts at build time and bundles them locally with your static assets. **Zero network requests** are sent to Google at runtime (GDPR compliant & faster).
+* **Zero Layout Shift (No CLS)**: Next.js calculates font fallback metrics (`size-adjust`) so page layout doesn't shift when custom fonts finish loading.
+* **Automatic Preloading**: Injects preload tags directly into the HTML `<head>` for fastest font availability.
+
+#### 3.1 Example: Configuring Google Fonts (`app/layout.tsx`)
+
+```tsx
+// app/layout.tsx
+import { Inter } from 'next/font/google';
+
+// Configure the Inter font from Google Fonts
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap', // Fallback font displays instantly while custom font loads
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    // Apply the generated font class to <html> or <body>
+    <html lang="en" className={inter.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+---
+
+### 4. Caching with `fetch`
+
+Next.js extends the native Web `fetch` API to provide granular, server-side caching control on every individual request.
+
+#### Caching Modes:
+
+1. **`cache: 'force-cache'` (Default / Static)**:
+   * Data is fetched once at build time (or on first request) and cached indefinitely.
+   * Best for data that never or rarely changes (e.g., blog posts, documentation, marketing pages).
+   ```typescript
+   const res = await fetch('https://api.example.com/posts', { cache: 'force-cache' });
+   ```
+
+2. **`cache: 'no-store'` (Dynamic / SSR)**:
+   * Skips cache entirely; fetches fresh data from the origin server on every single incoming request.
+   * Best for real-time, user-specific data (e.g., user profile, notifications, live stock prices).
+   ```typescript
+   const res = await fetch('https://api.example.com/notifications', { cache: 'no-store' });
+   ```
+
+3. **`next: { revalidate: number }` (Incremental Static Regeneration - ISR)**:
+   * Caches data for a defined lifespan (in seconds).
+   * After the cache expires, stale data is served instantly while Next.js re-fetches and updates the cache in the background (stale-while-revalidate).
+   ```typescript
+   const res = await fetch('https://api.example.com/products', {
+     next: { revalidate: 3600 }, // Cache refreshed every 1 hour
+   });
+   ```
+
+#### 4.1 Layered Caching with CDN (Vercel Edge)
+
+Next.js utilizes a multi-tiered caching architecture:
+
+```mermaid
+graph TD
+    User[End User] -->|1. Request| Edge[CDN / Edge Cache (Vercel Global Network)]
+    Edge -->|2. Route Cache Miss| RouteCache[Full Route Cache (Server HTML & RSC Payload)]
+    RouteCache -->|3. Data Cache Miss| DataCache[Data Cache (fetch response cache)]
+    DataCache -->|4. Uncached / Expired| Origin[Origin Data Source / DB / API]
+```
+
+* **1. Data Cache**: Server-side cache that stores individual `fetch` responses across server requests.
+* **2. Full Route Cache**: Stores the completely rendered React Server Component payload and HTML at build time or following revalidations.
+* **3. CDN / Edge Cache**: The outermost layer closest to users globally, serving static assets (JS, CSS, images, fonts) and cached full route pages with near-zero latency.
+
+---
+
+### 5. Bundle Analyzer (`@next/bundle-analyzer`)
+
+`@next/bundle-analyzer` visualizes the physical size of JavaScript bundles and modules created during `next build` as an interactive, zoomable treemap.
+
+#### Key Benefits:
+* Identifies the largest third-party dependencies contributing to bundle bloat (e.g., importing full `lodash` or `moment.js`).
+* Detects duplicate libraries or packages bundled multiple times.
+* Reveals opportunities to replace bloated libraries with lightweight alternatives or apply dynamic imports.
+
+#### 5.1 Configuration (`next.config.mjs` / `next.config.js`)
+
+```javascript
+// next.config.mjs
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Other Next.js configurations...
+};
+
+export default withBundleAnalyzer(nextConfig);
+```
+
+#### 5.2 Running the Analysis
+
+1. **Add script to `package.json`**:
+   ```json
+   "scripts": {
+     "analyze": "cross-env ANALYZE=true next build"
+   }
+   ```
+2. **Execute command**:
+   ```bash
+   npm run analyze
+   ```
+3. An interactive HTML visual map automatically opens in your default browser displaying client and server bundle breakdowns.
+```
+
+---
+
+## 19. Advanced Next.js Features & Patterns
+
+### 1. Using Middleware for Custom Server Logic
+
+Next.js **Middleware** enables executing custom logic on incoming requests before they are completed and rendered. Middleware runs on the **Edge Runtime** (geographically distributed close to end-users), ensuring sub-millisecond overhead.
+
+#### Common Use Cases:
+* **Authentication & Authorization**: Protecting routes by checking for valid session tokens or JWT cookies before the page renders.
+* **A/B Testing**: Rewriting requests to different page variations (`/variant-a` vs. `/variant-b`) based on experiment cookies.
+* **Localization / Geolocation**: Redirecting users to language-specific URLs based on browser locale or country headers.
+* **Bot Protection & Rate Limiting**: Identifying and blocking malicious crawlers or suspicious IP traffic.
+
+#### 1.1 Example: Authentication & Route Protection (`middleware.ts`)
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+// This function can be marked `async` if using `await` inside
+export function middleware(request: NextRequest) {
+  const sessionToken = request.cookies.get('session_token');
+
+  // If trying to access protected dashboard routes without a token, redirect to login
+  if (request.nextUrl.pathname.startsWith('/dashboard') && !sessionToken) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // If the request is valid, allow it to continue
+  return NextResponse.next();
+}
+
+// Matching Paths config: specify routes where middleware should execute
+export const config = {
+  matcher: '/dashboard/:path*',
+};
+```
+
+---
+
+### 2. Building Custom Servers
+
+While Next.js comes with a high-performance built-in server that covers 99% of production use cases, you can build a **Custom Server** (e.g., using Express, Fastify, or standard Node `http`) as an escape hatch.
+
+> [!WARNING]
+> A custom server should be used sparingly. It disables automatic static optimizations on some routes and cannot be deployed directly as Serverless Functions on platforms like Vercel (requires a long-running Node.js container or VM).
+
+#### When to Consider a Custom Server:
+* **WebSocket Integration**: Running real-time WebSocket servers (e.g., `Socket.IO`, `ws`) alongside your Next.js application on the same HTTP port.
+* **Complex Proxying**: Handling specialized legacy proxy rules or protocol bridges that cannot run on Edge Middleware.
+* **Integrating with Existing Node.js Backends**: Embedding Next.js into an existing legacy Express/Fastify monolith.
+
+#### 2.1 Example: Custom Express Server (`server.js`)
+
+```javascript
+// server.js (Requires: express, next)
+const express = require('express');
+const next = require('next');
+const { createServer } = require('http');
+
+const dev = process.env.NODE_ENV !== 'production';
+const app = next({ dev });
+const handle = app.getRequestHandler();
+
+app.prepare().then(() => {
+  const server = express();
+
+  // 1. Custom backend API route
+  server.get('/custom-route', (req, res) => {
+    return res.json({ message: 'This is a custom route from Express!' });
+  });
+
+  // 2. Delegate all other routes to Next.js App Router
+  server.all('*', (req, res) => {
+    return handle(req, res);
+  });
+
+  const port = process.env.PORT || 3000;
+  createServer(server).listen(port, () => {
+    console.log(`> Ready on http://localhost:${port}`);
+  });
+});
+```
+
+---
+
+### 3. Static HTML Export & Serverless Support
+
+Next.js can compile and export your application into standalone static assets (**HTML, CSS, JavaScript, and images**) that run without any Node.js server runtime.
+
+#### Ideal Use Cases:
+* Portfolios, blogs, marketing landing pages, and documentation websites.
+* Sites hosted on static storage services like **GitHub Pages**, **AWS S3 + CloudFront**, **Cloudflare Pages**, or **Nginx**.
+
+#### Key Limitations of Static Export:
+* ❌ **No Route Handlers**: Dynamic backend endpoints cannot run without a server runtime.
+* ❌ **No Middleware**: Edge middleware requires a server or Edge runtime.
+* ❌ **No Incremental Static Regeneration (ISR)**: On-demand or time-based revalidation is disabled.
+* ⚠️ **Dynamic Routes**: Must pre-render all possible paths at build time using `generateStaticParams`.
+
+#### 3.1 Configuration (`next.config.mjs`)
+
+```javascript
+// next.config.mjs
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Enables the static HTML export feature (outputs to the 'out/' directory)
+  output: 'export',
+
+  // Optional: Disable image optimization server if your static host doesn't support Node runtime
+  // images: {
+  //   unoptimized: true,
+  // },
+};
+
+export default nextConfig;
+```
+
+---
+
+### 4. Creating Reusable API Utilities (Higher-Order Handlers)
+
+Instead of the legacy Express-style API middleware from the Pages Router, the modern pattern in Next.js App Router is to compose **Higher-Order Functions (HOFs)** or wrapper utilities around Route Handlers.
+
+#### Perfect for Cross-Cutting Concerns:
+* **Authentication & Role Authorization**
+* **Request Input Validation (e.g., with Zod)**
+* **Global Error Handling, Metric Tracking & Structured Logging**
+
+---
+
+### 5. Example: Higher-Order Function for Authentication
+
+#### Step 1: Create the Authentication Wrapper Utility (`lib/api-utils.ts`)
+
+```typescript
+// lib/api-utils.ts
+import { type NextRequest, NextResponse } from 'next/server';
+
+type RouteHandler = (req: NextRequest, params?: any) => Promise<NextResponse>;
+
+// Higher-order function wrapping handler logic with authentication verification
+export function withAuthentication(handler: RouteHandler): RouteHandler {
+  return async (req: NextRequest, params?: any) => {
+    const authHeader = req.headers.get('Authorization');
+
+    // Validate bearer token
+    if (authHeader !== 'Bearer my-secret-token') {
+      return NextResponse.json({ error: 'Unauthorized: Invalid or missing token' }, { status: 401 });
+    }
+
+    // If authorized, execute the original Route Handler
+    return handler(req, params);
+  };
+}
+```
+
+#### Step 2: Apply the Utility to a Route Handler (`app/api/protected/route.ts`)
+
+```typescript
+// app/api/protected/route.ts
+import { NextResponse, type NextRequest } from 'next/server';
+import { withAuthentication } from '@/lib/api-utils';
+
+// Define core business logic of the route handler
+const protectedRouteHandler = async (req: NextRequest) => {
+  return NextResponse.json({
+    message: 'You have accessed protected data successfully!',
+    timestamp: new Date().toISOString(),
+  });
+};
+
+// Export the wrapped handler for the GET method
+export const GET = withAuthentication(protectedRouteHandler);
+```
